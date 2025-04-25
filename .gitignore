@@ -35,4 +35,11 @@ yarn-error.log*
 *.ntvs*
 *.njsproj
 *.sln
-*.sw? 
+*.sw?
+
+# Vercel
+.vercel
+
+# Typescript
+*.tsbuildinfo
+next-env.d.ts 

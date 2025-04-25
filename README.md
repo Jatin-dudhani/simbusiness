@@ -1,29 +1,32 @@
-# SimBusiness - Dropshipping Business Simulation
+# SimBusiness
 
-SimBusiness is a web application that simulates running a dropshipping business. It helps users understand the ins and outs of e-commerce without real financial risk.
+SimBusiness is an educational dropshipping business simulation platform that helps users learn about e-commerce, supplier management, and market analysis through interactive features and realistic business scenarios.
 
 ## Features
 
-- Interactive business simulation dashboard
-- Market analysis and trend visualization
-- Inventory management system
-- Financial tracking and reporting
-- Supplier relationship management
-- Customer behavior simulation
-- Marketing campaign simulator
-- Risk assessment tools
+- **Dashboard**: Real-time business metrics and analytics with simulation capabilities
+- **Supplier Management**: Evaluate and manage suppliers with risk assessment tools
+- **Market Analysis**: Research market trends and product opportunities
+- **Educational Content**: Learn dropshipping best practices and business strategies
+- **Interactive Scenarios**: Test decision-making skills with real-world business challenges
 
 ## Getting Started
 
-1. Clone this repository
-2. Install dependencies: `npm install`
-3. Run the development server: `npm run dev`
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Run the development server with `npm run dev`
 4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## Tech Stack
 
 - Next.js
+- React
 - TypeScript
 - Tailwind CSS
-- MongoDB
-- Chart.js 
+
+## Project Structure
+
+- `/src/app` - Application pages and routes
+- `/src/components` - Reusable React components
+- `/src/services` - API and data services
+- `/src/types` - TypeScript type definitions 

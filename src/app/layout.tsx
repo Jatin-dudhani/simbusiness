@@ -6,7 +6,7 @@ import Navigation from '@/components/Navigation';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SimBusiness - Dropshipping Business Simulation',
+  title: process.env.NEXT_PUBLIC_SITE_TITLE || 'SimBusiness - Dropshipping Business Simulation',
   description: 'Learn and practice dropshipping business strategies with our interactive simulation platform.',
 };
 

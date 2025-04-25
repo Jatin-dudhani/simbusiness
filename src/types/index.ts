@@ -10,6 +10,18 @@ export interface Supplier {
   min_order: number;
 }
 
+// Product interface
+export interface Product {
+  id: string;
+  name: string;
+  category: string;
+  cost: number;
+  potentialPrice: number;
+  rating: number;
+  imageUrl: string;
+  description?: string;
+}
+
 // Market interfaces
 export interface MarketTrend {
   category: string;
