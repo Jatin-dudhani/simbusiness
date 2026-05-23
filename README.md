@@ -106,7 +106,7 @@ npm start
 <p align="center">
   <img src="https://raw.githubusercontent.com/Jatin-dudhani/simbusiness/main/screenshots/homepage.png" width="1000" alt="SimBusiness Homepage"/>
 </p>
----
+
 
 ## 🔮 Future Enhancements
 
