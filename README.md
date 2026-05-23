@@ -101,8 +101,8 @@ npm start
 
 
 
-```md
-![Homepage](./screenshots/home.png)
+
+[![Homepage](./screenshots/home.png)](https://raw.githubusercontent.com/Jatin-dudhani/simbusiness/main/screenshots/homepage.png)
 ```
 
 ---
