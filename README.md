@@ -99,9 +99,7 @@ npm start
 
 ## 📸 Screenshots
 
-_Add screenshots of your project UI here for better presentation._
 
-Example:
 
 ```md
 ![Homepage](./screenshots/home.png)
