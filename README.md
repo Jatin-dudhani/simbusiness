@@ -100,7 +100,7 @@ npm start
 ## 📸 Screenshots
 
 
-
+```md
 
 [![Homepage](./screenshots/home.png)](https://raw.githubusercontent.com/Jatin-dudhani/simbusiness/main/screenshots/homepage.png)
 ```
