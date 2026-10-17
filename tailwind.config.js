@@ -14,7 +14,11 @@ module.exports = {
         charcoal: '#121214',
         cardDark: '#161618',
         borderDark: '#27272a',
-        borderLight: '#e4e4e7',
+        borderLight: '#e2e4e8',
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+        card: 'var(--card)',
+        cardForeground: 'var(--card-foreground)',
         primary: {
           DEFAULT: '#09090b',
           foreground: '#fafafa',

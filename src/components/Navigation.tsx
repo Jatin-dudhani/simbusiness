@@ -87,7 +87,7 @@ export default function Navigation() {
   const homeHref = isAuthenticated ? '/dashboard' : '/login';
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 dark:bg-obsidian/90 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 transition-colors">
+    <header className="sticky top-0 z-50 bg-[#f0f2f5]/85 dark:bg-obsidian/90 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
@@ -454,7 +454,7 @@ export default function Navigation() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white dark:bg-obsidian border-b border-zinc-200 dark:border-zinc-800 px-4 pt-2 pb-6 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div className="lg:hidden bg-[#f0f2f5] dark:bg-obsidian border-b border-zinc-200/80 dark:border-zinc-800 px-4 pt-2 pb-6 space-y-4 max-h-[85vh] overflow-y-auto">
           {/* Section 1: Platform */}
           <div>
             <div className="flex items-center justify-between pb-1 mb-2 border-b border-zinc-100 dark:border-zinc-800">

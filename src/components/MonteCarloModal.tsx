@@ -91,21 +91,21 @@ export default function MonteCarloModal({ isOpen, onClose }: MonteCarloModalProp
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white border border-zinc-200 rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-200 bg-zinc-50/50">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/50">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-black text-white rounded-xl">
+            <div className="p-2.5 bg-black dark:bg-white text-white dark:text-black rounded-xl">
               <FiTrendingUp className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-zinc-900 tracking-tight">Founder Monte Carlo Simulator</h2>
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Founder Monte Carlo Simulator</h2>
               <p className="text-xs text-zinc-500">Run 500 stochastic trials using your real unit economics to forecast runway and solvency</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition"
+            className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition"
           >
             <FiX className="w-5 h-5" />
           </button>

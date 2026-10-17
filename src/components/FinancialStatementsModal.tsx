@@ -89,22 +89,22 @@ export default function FinancialStatementsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white border border-zinc-200 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-200 bg-zinc-50/50">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/50">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-black text-white rounded-xl">
+            <div className="p-2.5 bg-black dark:bg-white text-white dark:text-black rounded-xl">
               <FiFileText className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-zinc-900 tracking-tight">Financial Statements & Cash Ledger</h2>
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Financial Statements & Cash Ledger</h2>
               <p className="text-xs text-zinc-500">GAAP-aligned 3-statement modeling, working capital, and payout clearing</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handleDownloadCsv}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-700 bg-white border border-zinc-300 rounded-lg hover:bg-zinc-50 transition shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition shadow-sm"
               title="Download full daily ledger in CSV format for Excel"
             >
               <FiDownload className="w-3.5 h-3.5" />
@@ -112,7 +112,7 @@ export default function FinancialStatementsModal({
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition"
+              className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition"
             >
               <FiX className="w-5 h-5" />
             </button>
@@ -120,13 +120,13 @@ export default function FinancialStatementsModal({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-zinc-200 px-6 bg-white gap-2">
+        <div className="flex border-b border-zinc-200 dark:border-zinc-800 px-6 bg-white dark:bg-[#121214] gap-2">
           <button
             onClick={() => setActiveTab('pnl')}
             className={`py-3 px-3 text-xs font-medium border-b-2 transition flex items-center gap-2 ${
               activeTab === 'pnl'
-                ? 'border-black text-zinc-900'
-                : 'border-transparent text-zinc-500 hover:text-zinc-700'
+                ? 'border-black dark:border-white text-zinc-900 dark:text-white'
+                : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
             }`}
           >
             <FiPieChart className="w-3.5 h-3.5" />
