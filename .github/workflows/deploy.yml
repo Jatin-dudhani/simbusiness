@@ -9,10 +9,16 @@ on:
       - main
   workflow_dispatch:
 
+# Enforce least privilege access across the workflow
+permissions:
+  contents: read
+
 jobs:
   validate-and-build:
     name: Build & Typecheck Validation
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -38,6 +44,8 @@ jobs:
     needs: validate-and-build
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Notify Vercel Production Deploy Hook
         run: |
