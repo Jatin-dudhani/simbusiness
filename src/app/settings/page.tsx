@@ -1,342 +1,426 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { BusinessSettings } from '@/types';
-import { motion } from 'framer-motion';
-import { FiSave, FiMoon, FiSun, FiBell, FiDollarSign, FiMail, FiShoppingBag, FiPercent, FiTruck } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { 
+  FiSave, 
+  FiMoon, 
+  FiSun, 
+  FiDollarSign, 
+  FiMail, 
+  FiCheckCircle, 
+  FiKey, 
+  FiSliders,
+  FiShield,
+  FiRefreshCw
+} from 'react-icons/fi';
+import { useAuth } from '@/contexts/AuthContext';
+import { siteConfig, businessDefaults, apiConfig } from '@/config/site';
 
 export default function SettingsPage() {
-  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({
-    businessName: 'My Dropshipping Business',
-    email: 'user@example.com',
-    currency: 'USD',
-    taxRate: 7.5,
-    shippingFee: 4.99,
-    profitMargin: 30,
-    notificationsEnabled: true,
-    darkMode: false
+  const { user, updateProfile } = useAuth();
+
+  const [businessSettings, setBusinessSettings] = useState({
+    businessName: siteConfig.name,
+    email: siteConfig.contact.email,
+    phone: siteConfig.contact.phone,
+    currency: businessDefaults.currency,
+    taxRate: businessDefaults.taxRate,
+    shippingFee: businessDefaults.shippingFee,
+    profitMargin: businessDefaults.targetMargin,
+    autoRouteOrders: true,
+    lowStockAlerts: true,
+    darkMode: false,
+    stripeKey: apiConfig.thirdPartyKeys.stripePublishableKey,
+    exchangeRateKey: apiConfig.thirdPartyKeys.exchangeRateApiKey,
+    supplierApiKey: apiConfig.thirdPartyKeys.supplierApiKey,
+    aiApiKey: apiConfig.thirdPartyKeys.aiApiKey,
   });
 
   const [isSaving, setIsSaving] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Load settings from localStorage on initial load
+  // Load from localStorage on mount
   useEffect(() => {
-    const savedSettings = localStorage.getItem('businessSettings');
-    if (savedSettings) {
-      try {
-        setBusinessSettings(JSON.parse(savedSettings));
-      } catch (error) {
-        console.error('Failed to parse saved settings:', error);
+    try {
+      const stored = localStorage.getItem('simbusiness_settings');
+      const isDark = document.documentElement.classList.contains('dark');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setBusinessSettings(prev => ({ ...prev, ...parsed, darkMode: isDark }));
+      } else {
+        setBusinessSettings(prev => ({ ...prev, darkMode: isDark }));
       }
+    } catch (e) {
+      console.warn('Failed to load settings:', e);
     }
   }, []);
 
-  // Apply dark mode when that setting changes
-  useEffect(() => {
-    if (businessSettings.darkMode) {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target as HTMLInputElement;
+    const checked = (e.target as HTMLInputElement).checked;
+
+    setBusinessSettings(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : type === 'number' ? parseFloat(value) || 0 : value
+    }));
+  };
+
+  const handleToggleDark = () => {
+    const nextDark = !businessSettings.darkMode;
+    setBusinessSettings(prev => ({ ...prev, darkMode: nextDark }));
+    if (nextDark) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('simbusiness_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('simbusiness_theme', 'light');
     }
-  }, [businessSettings.darkMode]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setBusinessSettings({
-      ...businessSettings,
-      [name]: type === 'checkbox' ? checked : type === 'number' ? parseFloat(value) : value
-    });
   };
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setBusinessSettings({
-      ...businessSettings,
-      [name]: value
-    });
-  };
-
-  const saveSettings = async () => {
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSaving(true);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Save to localStorage 
-    localStorage.setItem('businessSettings', JSON.stringify(businessSettings));
-    
-    setIsSaving(false);
-    setIsSuccess(true);
-    
-    // Reset success message after 3 seconds
-    setTimeout(() => {
-      setIsSuccess(false);
-    }, 3000);
-  };
+    await new Promise(r => setTimeout(r, 500));
 
-  const getCurrencySymbol = (currency: string) => {
-    switch (currency) {
-      case 'USD': return '$';
-      case 'EUR': return '€';
-      case 'GBP': return '£';
-      case 'JPY': return '¥';
-      case 'CAD': return 'C$';
-      case 'AUD': return 'A$';
-      default: return '$';
+    try {
+      localStorage.setItem('simbusiness_settings', JSON.stringify(businessSettings));
+      if (user) {
+        updateProfile({ businessName: businessSettings.businessName });
+      }
+    } catch (err) {
+      console.warn('Settings save error:', err);
     }
+
+    setIsSaving(false);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-gray-500 mt-2">Customize your business preferences</p>
+    <div className="min-h-screen bg-background">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="badge-mono badge-mono-black">Preferences</span>
+              <span className="text-xs text-zinc-500 font-mono">Store Configuration</span>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-black dark:text-white mt-1">
+              Store & Simulation Settings
+            </h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+              Customize currency formatting, automation thresholds, and configure optional 3rd-party API credentials.
+            </p>
+          </div>
+
+          {saveSuccess && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black text-white dark:bg-white dark:text-black text-xs font-semibold animate-in fade-in">
+              <FiCheckCircle className="w-4 h-4" />
+              Settings saved successfully
+            </div>
+          )}
         </div>
 
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-            <div className="px-6 py-8">
-              <h2 className="text-2xl font-bold mb-6">Business Settings</h2>
-              
-              {/* Business Information */}
-              <div className="mb-8">
-                <h3 className="text-lg font-medium mb-4 flex items-center">
-                  <FiShoppingBag className="mr-2" /> 
-                  Business Information
-                </h3>
-                <div className="space-y-4">
-                  <div className="group">
-                    <label htmlFor="businessName" className="block text-sm font-medium mb-1">
-                      Business Name
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        id="businessName"
-                        name="businessName"
-                        value={businessSettings.businessName}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-blue-400"
-                      />
-                    </div>
-                  </div>
+        <form onSubmit={handleSave} className="space-y-6">
+          {/* Section 1: Business Profile */}
+          <div className="card space-y-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white pb-3 border-b border-zinc-100 dark:border-zinc-800">
+              1. Store Identity & Contact Information
+            </h2>
 
-                  <div className="group">
-                    <label htmlFor="email" className="block text-sm font-medium mb-1">
-                      <span className="flex items-center">
-                        <FiMail className="mr-2" /> Email
-                      </span>
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={businessSettings.email}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-blue-400"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              {/* Financial Settings */}
-              <div className="mb-8">
-                <h3 className="text-lg font-medium mb-4 flex items-center">
-                  <FiDollarSign className="mr-2" />
-                  Financial Settings
-                </h3>
-                <div className="space-y-4">
-                  <div className="group">
-                    <label htmlFor="currency" className="block text-sm font-medium mb-1">
-                      Currency
-                    </label>
-                    <select
-                      id="currency"
-                      name="currency"
-                      value={businessSettings.currency}
-                      onChange={handleSelectChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-blue-400"
-                    >
-                      <option value="USD">USD ($)</option>
-                      <option value="EUR">EUR (€)</option>
-                      <option value="GBP">GBP (£)</option>
-                      <option value="JPY">JPY (¥)</option>
-                      <option value="CAD">CAD (C$)</option>
-                      <option value="AUD">AUD (A$)</option>
-                    </select>
-                  </div>
-
-                  <div className="group">
-                    <label htmlFor="taxRate" className="block text-sm font-medium mb-1 flex items-center">
-                      <FiPercent className="mr-2" /> Tax Rate (%)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        id="taxRate"
-                        name="taxRate"
-                        min="0"
-                        step="0.1"
-                        value={businessSettings.taxRate}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-blue-400"
-                      />
-                      <div className="absolute right-3 top-2.5 text-gray-500">%</div>
-                    </div>
-                  </div>
-
-                  <div className="group">
-                    <label htmlFor="shippingFee" className="block text-sm font-medium mb-1 flex items-center">
-                      <FiTruck className="mr-2" /> Default Shipping Fee
-                    </label>
-                    <div className="relative">
-                      <div className="absolute left-3 top-2.5 text-gray-500">
-                        {getCurrencySymbol(businessSettings.currency)}
-                      </div>
-                      <input
-                        type="number"
-                        id="shippingFee"
-                        name="shippingFee"
-                        min="0"
-                        step="0.01"
-                        value={businessSettings.shippingFee}
-                        onChange={handleInputChange}
-                        className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-blue-400"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="group">
-                    <label htmlFor="profitMargin" className="block text-sm font-medium mb-1 flex items-center">
-                      <FiPercent className="mr-2" /> Target Profit Margin (%)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        id="profitMargin"
-                        name="profitMargin"
-                        min="0"
-                        max="100"
-                        value={businessSettings.profitMargin}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-blue-400"
-                      />
-                      <div className="absolute right-3 top-2.5 text-gray-500">%</div>
-                    </div>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 font-medium mb-1">
+                  Business Store Name
+                </label>
+                <input
+                  type="text"
+                  name="businessName"
+                  value={businessSettings.businessName}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                />
               </div>
 
-              {/* Preferences */}
-              <div className="mb-8">
-                <h3 className="text-lg font-medium mb-4">Preferences</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center">
-                    <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                      <input 
-                        type="checkbox" 
-                        id="notificationsEnabled" 
-                        name="notificationsEnabled"
-                        checked={businessSettings.notificationsEnabled}
-                        onChange={handleInputChange}
-                        className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
-                      />
-                      <label 
-                        htmlFor="notificationsEnabled" 
-                        className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer ${
-                          businessSettings.notificationsEnabled ? 'bg-blue-500' : 'bg-gray-300'
-                        }`}
-                      ></label>
-                    </div>
-                    <label htmlFor="notificationsEnabled" className="flex items-center cursor-pointer">
-                      <FiBell className="mr-2" /> Enable Notifications
-                    </label>
-                  </div>
-
-                  <div className="flex items-center">
-                    <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                      <input 
-                        type="checkbox" 
-                        id="darkMode" 
-                        name="darkMode"
-                        checked={businessSettings.darkMode}
-                        onChange={handleInputChange}
-                        className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
-                      />
-                      <label 
-                        htmlFor="darkMode" 
-                        className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer ${
-                          businessSettings.darkMode ? 'bg-blue-500' : 'bg-gray-300'
-                        }`}
-                      ></label>
-                    </div>
-                    <label htmlFor="darkMode" className="flex items-center cursor-pointer">
-                      {businessSettings.darkMode ? (
-                        <><FiMoon className="mr-2" /> Dark Mode</>
-                      ) : (
-                        <><FiSun className="mr-2" /> Light Mode</>
-                      )}
-                    </label>
-                  </div>
-                </div>
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 font-medium mb-1">
+                  Support Email
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={businessSettings.email}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                />
               </div>
 
-              <div className="pt-4 border-t border-gray-200">
-                <button
-                  onClick={saveSettings}
-                  disabled={isSaving}
-                  className={`w-full py-3 px-4 flex items-center justify-center rounded-md ${
-                    isSuccess 
-                      ? 'bg-green-500 hover:bg-green-600' 
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } text-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400`}
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 font-medium mb-1">
+                  Customer Service Phone
+                </label>
+                <input
+                  type="text"
+                  name="phone"
+                  value={businessSettings.phone}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Economics Calibration */}
+          <div className="card space-y-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white pb-3 border-b border-zinc-100 dark:border-zinc-800">
+              2. Financial Economics & Margin Targets
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 font-medium mb-1">
+                  Currency Symbol
+                </label>
+                <select
+                  name="currency"
+                  value={businessSettings.currency}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none"
                 >
-                  {isSaving ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Saving...
-                    </>
-                  ) : isSuccess ? (
-                    <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      Settings Saved!
-                    </>
-                  ) : (
-                    <>
-                      <FiSave className="mr-2" />
-                      Save Settings
-                    </>
-                  )}
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="CAD">CAD (C$)</option>
+                  <option value="AUD">AUD (A$)</option>
+                  <option value="JPY">JPY (¥)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 font-medium mb-1">
+                  Default Sales Tax (%)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  name="taxRate"
+                  value={businessSettings.taxRate}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 font-medium mb-1">
+                  Customer Shipping Fee ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="shippingFee"
+                  value={businessSettings.shippingFee}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 font-medium mb-1">
+                  Target Profit Margin (%)
+                </label>
+                <input
+                  type="number"
+                  step="1"
+                  name="profitMargin"
+                  value={businessSettings.profitMargin}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Automation & Theme */}
+          <div className="card space-y-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white pb-3 border-b border-zinc-100 dark:border-zinc-800">
+              3. Automation & Aesthetics
+            </h2>
+
+            <div className="space-y-3 text-xs">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="autoRouteOrders"
+                  checked={businessSettings.autoRouteOrders}
+                  onChange={handleInputChange}
+                  className="rounded border-zinc-300 text-black focus:ring-0 w-4 h-4"
+                />
+                <span className="text-zinc-700 dark:text-zinc-300">
+                  <strong>Automated Supplier Routing:</strong> Instantly generate supplier tracking numbers upon order placement.
+                </span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="lowStockAlerts"
+                  checked={businessSettings.lowStockAlerts}
+                  onChange={handleInputChange}
+                  className="rounded border-zinc-300 text-black focus:ring-0 w-4 h-4"
+                />
+                <span className="text-zinc-700 dark:text-zinc-300">
+                  <strong>Low Inventory Warning:</strong> Alert when warehouse inventory drops below 10 units.
+                </span>
+              </label>
+
+              <div className="pt-2 flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800">
+                <div>
+                  <p className="font-semibold text-black dark:text-white">Monochrome Dark Mode</p>
+                  <p className="text-[11px] text-zinc-500">Switch between deep obsidian dark and minimalist crisp light.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleDark}
+                  className="btn btn-outline text-xs flex items-center gap-2"
+                >
+                  {businessSettings.darkMode ? <FiSun className="w-4 h-4" /> : <FiMoon className="w-4 h-4" />}
+                  {businessSettings.darkMode ? 'Light Theme' : 'Dark Theme'}
                 </button>
               </div>
             </div>
           </div>
 
-          <div
-            className="mt-8 text-center text-sm text-gray-500"
-          >
-            <p>Your settings are automatically synced across all your devices.</p>
-          </div>
-        </div>
-      </main>
+          {/* Section 4: 3rd Party API Keys Configuration */}
+          <div className="card space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+              <div>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-2">
+                  <FiKey className="w-4 h-4" /> 4. Third-Party API Keys & Live Gateways
+                </h2>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Optional. If left blank, SimBusiness operates fully autonomously in simulated mode.
+                </p>
+              </div>
+              <span className="badge-mono badge-mono-outline">Configurable</span>
+            </div>
 
-      {/* CSS for toggle switch */}
-      <style jsx>{`
-        .toggle-checkbox:checked {
-          transform: translateX(100%);
-          border-color: white;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-          background-color: #3B82F6;
-        }
-      `}</style>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium">
+                    Stripe Test Publishable Key
+                  </label>
+                  <a 
+                    href="https://dashboard.stripe.com/test/apikeys" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-zinc-400 hover:text-black dark:hover:text-white underline font-mono"
+                  >
+                    dashboard.stripe.com ↗
+                  </a>
+                </div>
+                <input
+                  type="password"
+                  name="stripeKey"
+                  placeholder="pk_test_51..."
+                  value={businessSettings.stripeKey}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs font-mono focus:outline-none"
+                />
+                <p className="text-[10px] text-zinc-400 mt-1">Free instant developer sandbox key for simulated customer checkouts.</p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium">
+                    Exchange Rates API Key
+                  </label>
+                  <a 
+                    href="https://www.exchangerate-api.com/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-zinc-400 hover:text-black dark:hover:text-white underline font-mono"
+                  >
+                    exchangerate-api.com ↗
+                  </a>
+                </div>
+                <input
+                  type="password"
+                  name="exchangeRateKey"
+                  placeholder="Free tier API key"
+                  value={businessSettings.exchangeRateKey}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs font-mono focus:outline-none"
+                />
+                <p className="text-[10px] text-zinc-400 mt-1">Free instant tier (1,500 req/month) for live multi-currency pricing.</p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium">
+                    Supplier API Key (Printful / CJ)
+                  </label>
+                  <a 
+                    href="https://developers.printful.com/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-zinc-400 hover:text-black dark:hover:text-white underline font-mono"
+                  >
+                    developers.printful.com ↗
+                  </a>
+                </div>
+                <input
+                  type="password"
+                  name="supplierApiKey"
+                  placeholder="Direct dropship supplier token"
+                  value={businessSettings.supplierApiKey}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs font-mono focus:outline-none"
+                />
+                <p className="text-[10px] text-zinc-400 mt-1">Free developer sandbox API access for live POD sync.</p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium">
+                    Google Gemini API Key
+                  </label>
+                  <a 
+                    href="https://aistudio.google.com/app/apikey" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-zinc-400 hover:text-black dark:hover:text-white underline font-mono"
+                  >
+                    aistudio.google.com ↗
+                  </a>
+                </div>
+                <input
+                  type="password"
+                  name="aiApiKey"
+                  placeholder="AIzaSy... (Google Gemini key)"
+                  value={businessSettings.aiApiKey}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                />
+                <p className="text-[10px] text-zinc-400 mt-1 font-medium text-black dark:text-white">Active in SimBusiness! Powers the AI Strategic Advisor on Dashboard.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Submit */}
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="btn btn-primary px-6 text-xs flex items-center gap-2"
+            >
+              <FiSave className="w-4 h-4" />
+              {isSaving ? 'Saving Preferences...' : 'Save All Settings'}
+            </button>
+          </div>
+        </form>
+      </main>
     </div>
   );
-} 
+}

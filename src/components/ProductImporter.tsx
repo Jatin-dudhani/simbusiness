@@ -1,6 +1,9 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { SupplierProduct, SupplierService } from '../services/SupplierService';
 import { StoreService } from '../services/StoreService';
+import { FiCheck, FiSearch, FiSliders } from 'react-icons/fi';
 
 interface ProductImporterProps {
   supplierId: string;
@@ -20,21 +23,18 @@ const ProductImporter: React.FC<ProductImporterProps> = ({ supplierId, onProduct
   useEffect(() => {
     const fetchProducts = async () => {
       if (!supplierId) return;
-      
       try {
         setLoading(true);
         const data = await SupplierService.getSupplierProducts(supplierId);
         setProducts(data);
         
-        // Extract all unique categories
         const categories = Array.from(
           new Set(data.flatMap(product => product.categories))
         );
         setAvailableCategories(categories);
-        
         setError(null);
       } catch (err) {
-        setError('Failed to load supplier products. Please try again later.');
+        setError('Failed to load supplier products.');
         console.error('Error fetching supplier products:', err);
       } finally {
         setLoading(false);
@@ -47,22 +47,15 @@ const ProductImporter: React.FC<ProductImporterProps> = ({ supplierId, onProduct
   const handleImportProduct = async (product: SupplierProduct) => {
     try {
       setImporting(prev => ({ ...prev, [product.id]: true }));
-      
-      // Import the product with custom markup
-      await StoreService.importProductFromSupplier(supplierId, product.id, {
-        // Custom fields can be added here if needed
-      });
+      await StoreService.importProductFromSupplier(supplierId, product.id);
       
       if (onProductImported) {
         onProductImported();
       }
-      
-      // Remove the imported product from the list
       setProducts(prev => prev.filter(p => p.id !== product.id));
-      
     } catch (err) {
       console.error('Error importing product:', err);
-      setError('Failed to import product. Please try again.');
+      setError('Failed to import product.');
     } finally {
       setImporting(prev => ({ ...prev, [product.id]: false }));
     }
@@ -77,14 +70,12 @@ const ProductImporter: React.FC<ProductImporterProps> = ({ supplierId, onProduct
   };
 
   const filteredProducts = products.filter(product => {
-    // Filter by search term
     const matchesSearch = 
       searchTerm === '' || 
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filter by selected categories
     const matchesCategories = 
       selectedCategories.length === 0 || 
       product.categories.some(category => selectedCategories.includes(category));
@@ -93,144 +84,85 @@ const ProductImporter: React.FC<ProductImporterProps> = ({ supplierId, onProduct
   });
 
   if (loading) {
-    return <div className="p-4 text-center">Loading supplier products...</div>;
+    return <div className="p-6 text-center text-xs text-zinc-500 font-mono">Loading supplier catalog...</div>;
   }
 
   if (error) {
-    return <div className="p-4 text-center text-red-600">{error}</div>;
+    return <div className="p-6 text-center text-xs text-zinc-500 font-mono">{error}</div>;
   }
 
   if (products.length === 0) {
-    return <div className="p-4 text-center">No products available from this supplier.</div>;
+    return <div className="p-6 text-center text-xs text-zinc-500 font-mono">All products from this supplier are currently imported.</div>;
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="p-4 border-b">
-        <h2 className="text-xl font-semibold">Import Products</h2>
-        <p className="text-gray-500 mt-1">
-          Browse and import products from this supplier to your store.
-        </p>
+    <div className="card p-0 overflow-hidden">
+      <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 space-y-4">
+        <div>
+          <h2 className="text-sm font-bold text-black dark:text-white uppercase tracking-wider">
+            Wholesale Catalog Importer
+          </h2>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Import vetted supplier inventory items into your active store listings with custom retail markup.
+          </p>
+        </div>
         
-        <div className="mt-4 flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <label htmlFor="search" className="block text-sm font-medium text-gray-700">
-              Search Products
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div>
+            <label className="block text-zinc-600 dark:text-zinc-400 font-medium mb-1">
+              Search Supplier SKUs
             </label>
             <input
               type="text"
-              id="search"
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-              placeholder="Search by name, description or SKU"
+              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none"
+              placeholder="Search by title, SKU or keyword..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
           
-          <div className="flex-1">
-            <label htmlFor="markup" className="block text-sm font-medium text-gray-700">
-              Markup Percentage
+          <div>
+            <label className="block text-zinc-600 dark:text-zinc-400 font-medium mb-1">
+              Store Retail Markup (%)
             </label>
-            <div className="mt-1 flex items-center">
-              <input
-                type="number"
-                id="markup"
-                min="0"
-                max="500"
-                className="block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                value={markupPercentage}
-                onChange={e => setMarkupPercentage(Number(e.target.value))}
-              />
-              <span className="ml-2 text-gray-500">%</span>
-            </div>
+            <input
+              type="number"
+              min="0"
+              max="500"
+              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none"
+              value={markupPercentage}
+              onChange={e => setMarkupPercentage(Number(e.target.value))}
+            />
           </div>
         </div>
-        
-        {availableCategories.length > 0 && (
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700">
-              Filter by Category
-            </label>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {availableCategories.map(category => (
-                <button
-                  key={category}
-                  className={`px-3 py-1 rounded-full text-sm ${
-                    selectedCategories.includes(category)
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                  }`}
-                  onClick={() => toggleCategory(category)}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
       
-      <ul className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
+      <ul className="divide-y divide-zinc-100 dark:divide-zinc-800 max-h-[500px] overflow-y-auto">
         {filteredProducts.map(product => (
-          <li key={product.id} className="p-4">
-            <div className="flex flex-col md:flex-row items-start md:items-center">
-              <div className="flex-shrink-0 h-16 w-16 mb-2 md:mb-0">
-                <img
-                  className="h-16 w-16 rounded object-cover"
-                  src={product.images[0] || 'https://via.placeholder.com/200?text=Product'}
-                  alt={product.name}
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://via.placeholder.com/200?text=Product';
-                  }}
-                />
-              </div>
-              <div className="ml-0 md:ml-4 flex-1">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                  <h3 className="text-lg font-medium">{product.name}</h3>
-                  <div className="flex items-center mt-2 md:mt-0">
-                    <span className="text-gray-500 mr-2">
-                      Cost: ${product.basePrice.toFixed(2)}
-                    </span>
-                    <span className="text-green-600 font-medium">
-                      Sell: ${(product.basePrice * (1 + markupPercentage / 100)).toFixed(2)}
-                    </span>
-                  </div>
+          <li key={product.id} className="p-4 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 font-mono text-xs font-bold text-zinc-400">
+                  SKU
                 </div>
-                <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                  {product.description}
-                </p>
-                <div className="mt-2 flex flex-wrap items-center text-sm text-gray-500 gap-2">
-                  <span className="bg-gray-100 px-2 py-1 rounded">
-                    SKU: {product.sku}
+                <div>
+                  <h3 className="font-semibold text-xs text-black dark:text-white">{product.name}</h3>
+                  <p className="text-[11px] text-zinc-500 font-mono mt-0.5">
+                    Supplier Cost: ${product.basePrice.toFixed(2)} → Retail Price: ${(product.basePrice * (1 + markupPercentage / 100)).toFixed(2)} ({markupPercentage}% margin)
+                  </p>
+                  <span className="text-[10px] font-mono text-zinc-400 mt-1 block">
+                    Available Stock: {product.inventoryCount} units | Weight: {product.shippingWeight} kg
                   </span>
-                  <span className="bg-gray-100 px-2 py-1 rounded">
-                    Stock: {product.inventoryCount}
-                  </span>
-                  {product.variants.length > 0 && (
-                    <span className="bg-gray-100 px-2 py-1 rounded">
-                      {product.variants.length} variants
-                    </span>
-                  )}
-                  {product.categories.map(category => (
-                    <span key={category} className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                      {category}
-                    </span>
-                  ))}
                 </div>
               </div>
-              <div className="mt-4 md:mt-0 md:ml-4 w-full md:w-auto">
-                <button
-                  className={`w-full md:w-auto px-4 py-2 rounded-md text-white ${
-                    importing[product.id]
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-blue-500 hover:bg-blue-600'
-                  }`}
-                  onClick={() => handleImportProduct(product)}
-                  disabled={importing[product.id]}
-                >
-                  {importing[product.id] ? 'Importing...' : 'Import Product'}
-                </button>
-              </div>
+
+              <button
+                className="btn btn-primary text-xs py-1.5 px-3 self-end sm:self-center"
+                onClick={() => handleImportProduct(product)}
+                disabled={importing[product.id]}
+              >
+                {importing[product.id] ? 'Importing...' : '+ Import SKU'}
+              </button>
             </div>
           </li>
         ))}
@@ -239,4 +171,4 @@ const ProductImporter: React.FC<ProductImporterProps> = ({ supplierId, onProduct
   );
 };
 
-export default ProductImporter; 
+export default ProductImporter;

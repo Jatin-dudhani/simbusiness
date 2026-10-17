@@ -1,153 +1,162 @@
-"use client";
+'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { FiUser, FiMail, FiLock, FiArrowRight } from 'react-icons/fi';
+import { siteConfig } from '@/config/site';
 
-export default function SignUp() {
+export default function SignUpPage() {
   const router = useRouter();
+  const { signUp } = useAuth();
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    
-    // Basic validation
-    if (!formData.name || !formData.email || !formData.password) {
-      setError('All fields are required');
-      return;
-    }
-    
+    setError(null);
+
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('Passwords do not match. Please verify.');
       return;
     }
-    
-    setLoading(true);
-    
-    try {
-      // In a real app, you would call an API here
-      // For now, let's simulate success after a short delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Redirect to signin page after successful signup
-      router.push('/auth/signin');
-    } catch (err) {
-      setError('Failed to create account. Please try again.');
-    } finally {
-      setLoading(false);
+
+    setIsLoading(true);
+    const res = await signUp(formData.name, formData.email, formData.password);
+
+    if (res.success) {
+      router.push('/dashboard');
+    } else {
+      setError(res.error || 'Failed to create simulator account.');
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link href="/auth/signin" className="font-medium text-blue-600 hover:text-blue-500">
-              sign in to your existing account
-            </Link>
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4 rounded-md shadow-sm">
+    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <Link href="/" className="inline-flex items-center gap-2 group mb-4">
+          <div className="w-9 h-9 rounded-xl bg-black dark:bg-white flex items-center justify-center text-white dark:text-black font-black text-sm">
+            SB
+          </div>
+          <span className="font-bold text-xl tracking-tight text-black dark:text-white">
+            {siteConfig.name}
+          </span>
+        </Link>
+        <h2 className="text-2xl font-bold tracking-tight text-black dark:text-white">
+          Create store operator account
+        </h2>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+          Already registered?{' '}
+          <Link href="/auth/signin" className="font-semibold underline text-black dark:text-white">
+            Sign in to existing store
+          </Link>
+        </p>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
+        <div className="card p-8 shadow-sm">
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             {error && (
-              <div className="text-red-500 text-sm font-medium">
+              <div className="p-3 rounded-lg border border-black dark:border-white bg-zinc-50 dark:bg-zinc-900 text-black dark:text-white font-medium">
                 {error}
               </div>
             )}
-            
+
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
+              <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                Full Name / Founder
               </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                value={formData.name}
-                onChange={handleChange}
-              />
+              <div className="relative">
+                <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Jordan Hayes"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                />
+              </div>
             </div>
-            
+
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
+              <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                Work Email Address
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                value={formData.email}
-                onChange={handleChange}
-              />
+              <div className="relative">
+                <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <input
+                  type="email"
+                  required
+                  placeholder="jordan@mybrand.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                />
+              </div>
             </div>
-            
+
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+              <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                Create Password
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                value={formData.password}
-                onChange={handleChange}
-              />
+              <div className="relative">
+                <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <input
+                  type="password"
+                  required
+                  placeholder="At least 6 characters"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                />
+              </div>
             </div>
-            
+
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                 Confirm Password
               </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
+              <div className="relative">
+                <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <input
+                  type="password"
+                  required
+                  placeholder="Re-enter password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                />
+              </div>
             </div>
-          </div>
 
-          <div>
+            <p className="text-[11px] text-zinc-500 pt-1">
+              By creating an account, you agree to the virtual simulation sandbox terms. No credit card or capital is ever collected.
+            </p>
+
             <button
               type="submit"
-              disabled={loading}
-              className="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-75"
+              disabled={isLoading}
+              className="btn btn-primary w-full text-xs py-2.5 mt-2 flex items-center justify-center gap-2"
             >
-              {loading ? 'Creating account...' : 'Sign up'}
+              {isLoading ? 'Creating Sandbox Profile...' : (
+                <>
+                  Launch Virtual Store <FiArrowRight className="w-3.5 h-3.5" />
+                </>
+              )}
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

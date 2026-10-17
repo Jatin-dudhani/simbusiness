@@ -1,136 +1,147 @@
-"use client";
+'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { FiLock, FiMail, FiArrowRight, FiCheckCircle, FiZap } from 'react-icons/fi';
+import { siteConfig } from '@/config/site';
 
-export default function SignIn() {
+export default function SignInPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const { signIn, signInDemoUser } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    
-    // Basic validation
-    if (!formData.email || !formData.password) {
-      setError('All fields are required');
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      // In a real app, you would call an API here
-      // For now, let's simulate success after a short delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, let's accept any credentials
-      // Redirect to dashboard after successful login
+    setError(null);
+    setIsLoading(true);
+
+    const res = await signIn(email, password, rememberMe);
+    if (res.success) {
       router.push('/dashboard');
-    } catch (err) {
-      setError('Invalid email or password');
-    } finally {
-      setLoading(false);
+    } else {
+      setError(res.error || 'Authentication failed. Please verify credentials.');
+      setIsLoading(false);
     }
   };
 
+  const handleDemoLogin = () => {
+    signInDemoUser();
+    router.push('/dashboard');
+  };
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Sign in to your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link href="/auth/signup" className="font-medium text-blue-600 hover:text-blue-500">
-              create a new account
-            </Link>
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4 rounded-md shadow-sm">
+    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <Link href="/" className="inline-flex items-center gap-2 group mb-4">
+          <div className="w-9 h-9 rounded-xl bg-black dark:bg-white flex items-center justify-center text-white dark:text-black font-black text-sm">
+            SB
+          </div>
+          <span className="font-bold text-xl tracking-tight text-black dark:text-white">
+            {siteConfig.name}
+          </span>
+        </Link>
+        <h2 className="text-2xl font-bold tracking-tight text-black dark:text-white">
+          Sign in to your virtual store
+        </h2>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+          Or{' '}
+          <Link href="/auth/signup" className="font-semibold underline text-black dark:text-white">
+            create a new simulator account
+          </Link>
+        </p>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
+        <div className="card p-8 shadow-sm">
+          {/* Quick Demo Access */}
+          <div className="mb-6 pb-6 border-b border-zinc-100 dark:border-zinc-800">
+            <button
+              onClick={handleDemoLogin}
+              className="w-full btn btn-secondary text-xs flex items-center justify-center gap-2 py-2.5 font-medium border border-zinc-200 dark:border-zinc-700"
+            >
+              <FiZap className="w-3.5 h-3.5 text-black dark:text-white" />
+              1-Click Admin Login (Jatin Dudhani)
+            </button>
+            <p className="text-[11px] text-zinc-400 text-center mt-2">Instant access as jatindudhani07@gmail.com</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             {error && (
-              <div className="text-red-500 text-sm font-medium">
+              <div className="p-3 rounded-lg border border-black dark:border-white bg-zinc-50 dark:bg-zinc-900 text-black dark:text-white font-medium">
                 {error}
               </div>
             )}
-            
+
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
+              <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                Store Operator Email
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                value={formData.email}
-                onChange={handleChange}
-              />
+              <div className="relative">
+                <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <input
+                  type="email"
+                  required
+                  placeholder="name@business.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                />
+              </div>
             </div>
-            
+
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-medium text-zinc-700 dark:text-zinc-300">
+                  Password
+                </label>
+                <Link href="/faq" className="text-[11px] text-zinc-400 hover:underline">
+                  Need help?
+                </Link>
+              </div>
+              <div className="relative">
+                <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded border-zinc-300 text-black focus:ring-0 w-3.5 h-3.5"
+                />
+                <span className="text-zinc-600 dark:text-zinc-400 text-xs">Remember this device</span>
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                Remember me
-              </label>
             </div>
 
-            <div className="text-sm">
-              <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
-                Forgot your password?
-              </a>
-            </div>
-          </div>
-
-          <div>
             <button
               type="submit"
-              disabled={loading}
-              className="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-75"
+              disabled={isLoading}
+              className="btn btn-primary w-full text-xs py-2.5 mt-2 flex items-center justify-center gap-2"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? 'Authenticating...' : (
+                <>
+                  Sign In to Dashboard <FiArrowRight className="w-3.5 h-3.5" />
+                </>
+              )}
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -2,13 +2,28 @@ import '@/styles/globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Navigation from '@/components/Navigation';
-import Link from 'next/link';
+import Footer from '@/components/Footer';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { siteConfig } from '@/config/site';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
-  title: process.env.NEXT_PUBLIC_SITE_TITLE || 'SimBusiness - Dropshipping Business Simulation',
-  description: 'Learn and practice dropshipping business strategies with our interactive simulation platform.',
+  title: siteConfig.title,
+  description: siteConfig.description,
+  metadataBase: new URL(siteConfig.url),
+  openGraph: {
+    title: siteConfig.title,
+    description: siteConfig.description,
+    url: siteConfig.url,
+    siteName: siteConfig.name,
+    locale: 'en_US',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({
@@ -17,37 +32,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <header className="bg-blue-600 text-white py-4 px-6 flex justify-between items-center">
-          <div className="font-bold text-xl">
-            <Link href="/" className="hover:opacity-90 transition-opacity">
-              SimBusiness
-            </Link>
+    <html lang="en" className="scroll-smooth">
+      <body className={`${inter.className} min-h-screen flex flex-col bg-background text-foreground antialiased selection:bg-zinc-800 selection:text-white dark:selection:bg-zinc-200 dark:selection:text-black`}>
+        <AuthProvider>
+          <Navigation />
+          <div className="flex-1 flex flex-col">
+            {children}
           </div>
-          <nav>
-            <ul className="flex space-x-6">
-              <li>
-                <Link href="/dashboard" className="hover:underline">Dashboard</Link>
-              </li>
-              <li>
-                <Link href="/faq" className="hover:underline">FAQ</Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:underline">Contact</Link>
-              </li>
-              <li>
-                <Link href="/auth/signup" className="hover:underline">Sign Up</Link>
-              </li>
-              <li>
-                <Link href="/auth/signin" className="hover:underline">Sign In</Link>
-              </li>
-            </ul>
-          </nav>
-        </header>
-        <Navigation />
-        {children}
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );
-} 
+}

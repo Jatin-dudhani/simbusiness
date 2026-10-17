@@ -1,315 +1,276 @@
-"use client";
+'use client';
 
+import React from 'react';
 import Link from 'next/link';
-import {
+import { 
   FiBarChart2, 
   FiPackage, 
   FiDollarSign, 
   FiUsers, 
   FiTarget, 
-  FiAlertTriangle 
+  FiShield, 
+  FiArrowRight,
+  FiTrendingUp,
+  FiCheckCircle,
+  FiLayers,
+  FiTruck,
+  FiPercent
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
-import { useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { siteConfig } from '@/config/site';
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col overflow-hidden">
+    <main className="min-h-screen bg-background text-foreground flex flex-col overflow-hidden">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <motion.h1 
-              className="text-5xl font-bold mb-6"
-              initial={{ opacity: 0, y: -50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
-            >
-              SimBusiness
-            </motion.h1>
-            <motion.p 
-              className="text-xl mb-8"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-            >
-              Master the art of dropshipping with our interactive business simulation platform.
-            </motion.p>
-            <motion.div 
-              className="flex flex-col sm:flex-row justify-center gap-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.4, ease: "easeOut" }}
-            >
-              <Link href="/dashboard" 
-                className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg text-lg px-6 py-3 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
-              >
-                Start Simulation
-              </Link>
-              <Link href="/auth/signup" 
-                className="bg-transparent hover:bg-white/20 text-white border-2 border-white font-medium rounded-lg text-lg px-6 py-3 transition-all duration-300 hover:scale-105"
-              >
-                Sign Up Now
-              </Link>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-      
-      {/* Features Section */}
-      <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
-        <div className="container mx-auto px-4">
-          <motion.h2 
-            className="text-4xl font-bold text-center mb-4 text-gray-800"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
+      <section className="relative pt-24 pb-20 md:pt-32 md:pb-28 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-200 dark:border-zinc-800 text-xs font-mono uppercase tracking-wider mb-8 bg-zinc-50 dark:bg-zinc-900"
           >
-            Key Features
-          </motion.h2>
-          <motion.p
-            className="text-xl text-center mb-12 text-gray-600 max-w-2xl mx-auto"
+            <span className="w-2 h-2 rounded-full bg-black dark:bg-white animate-pulse" />
+            <span>SimBusiness Engine v{siteConfig.version} • Next-Gen Simulation</span>
+          </motion.div>
+
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-black dark:text-white max-w-4xl mx-auto leading-[1.08]"
           >
-            Experience all aspects of running a dropshipping business without the financial risk
+            Master e-commerce with zero financial risk.
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-lg sm:text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto mt-6 leading-relaxed"
+          >
+            {siteConfig.description}
           </motion.p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <FeatureCard
-              title="Market Research"
-              description="Analyze market trends and identify profitable niches with our advanced research tools." 
-              icon={<FiBarChart2 className="text-blue-500"/>}
-              delay={0}
-            />
-            <FeatureCard
-              title="Supplier Management"
-              description="Find and connect with reliable suppliers for your products."
-              icon={<FiUsers className="text-purple-500"/>}
-              delay={0.1}
-            />
-            <FeatureCard
-              title="Inventory Sync"
-              description="Automatically sync inventory levels with your suppliers in real-time."
-              icon={<FiPackage className="text-orange-500"/>}
-              delay={0.2}
-            />
-            <FeatureCard
-              title="Profit Analytics"
-              description="Track your earnings and analyze performance with detailed reports."
-              icon={<FiDollarSign className="text-green-500"/>}
-              delay={0.3}
-            />
-            <FeatureCard
-              title="Marketing Tools"
-              description="Test marketing strategies and analyze their effectiveness."
-              icon={<FiTarget className="text-red-500"/>}
-              delay={0.4}
-            />
-            <FeatureCard
-              title="Risk Assessment"
-              description="Identify and mitigate potential risks in your business model without real losses."
-              icon={<FiAlertTriangle className="text-yellow-500"/>}
-              delay={0.5}
-            />
-          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mt-10"
+          >
+            <Link
+              href="/dashboard"
+              className="btn btn-primary px-7 py-3.5 text-sm w-full sm:w-auto shadow-md hover:shadow-lg"
+            >
+              Launch Simulation
+              <FiArrowRight className="w-4 h-4 ml-2" />
+            </Link>
+            <Link
+              href="/calculator"
+              className="btn btn-outline px-7 py-3.5 text-sm w-full sm:w-auto"
+            >
+              Unit Economics Calculator
+            </Link>
+          </motion.div>
+
+          {/* Key Metrics Ribbon */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto mt-16 pt-12 border-t border-zinc-100 dark:border-zinc-800 text-left"
+          >
+            <div className="p-3">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500">Realism Level</span>
+              <p className="text-xl font-bold text-black dark:text-white mt-0.5">High-Fidelity</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Dynamic market events</p>
+            </div>
+            <div className="p-3">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500">Order Routing</span>
+              <p className="text-xl font-bold text-black dark:text-white mt-0.5">Automated</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Live supplier fulfillment</p>
+            </div>
+            <div className="p-3">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500">Capital At Risk</span>
+              <p className="text-xl font-bold text-black dark:text-white mt-0.5">$0.00</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Safe virtual economics</p>
+            </div>
+            <div className="p-3">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500">Decision Modeling</span>
+              <p className="text-xl font-bold text-black dark:text-white mt-0.5">Instant</p>
+              <p className="text-xs text-zinc-500 mt-0.5">ROAS & margin feedback</p>
+            </div>
+          </motion.div>
         </div>
       </section>
-      
-      {/* How It Works Section */}
-      <section className="py-16 bg-blue-50">
-        <div className="container mx-auto px-4">
-          <motion.h2 
-            className="text-4xl font-bold text-center mb-12 text-gray-800"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.5 }}
-          >
-            How SimBusiness Works
-          </motion.h2>
-          
-          <div className="max-w-4xl mx-auto">
-            <StepCard 
-              number="1" 
-              title="Create Your Store" 
-              description="Set up your virtual dropshipping store and customize it to your liking."
-            />
-            <StepCard 
-              number="2" 
-              title="Find Suppliers" 
-              description="Browse our database of virtual suppliers and add their products to your store."
-            />
-            <StepCard 
-              number="3" 
-              title="Market Your Products" 
-              description="Use simulated marketing tools to attract virtual customers to your store."
-            />
-            <StepCard 
-              number="4" 
-              title="Process Orders" 
-              description="Handle customer orders and coordinate with suppliers for fulfillment."
-            />
-            <StepCard 
-              number="5" 
-              title="Analyze & Optimize" 
-              description="Review your performance and optimize your strategy to increase profits."
-            />
+
+      {/* Core Simulation Capabilities */}
+      <section className="py-20 md:py-28 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-obsidian/40">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="badge-mono badge-mono-outline">Comprehensive System</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-black dark:text-white tracking-tight mt-3">
+              Engineered for realistic entrepreneurship.
+            </h2>
+            <p className="text-zinc-600 dark:text-zinc-400 mt-3 text-base">
+              Test pricing elasticity, supply chain bottlenecks, conversion rates, and paid ad scale without putting your savings on the line.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="card card-hover p-6">
+              <div className="w-10 h-10 rounded-xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center mb-5">
+                <FiBarChart2 className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-black dark:text-white">Real-Time Operations</h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed">
+                Run daily sales simulations, adjust inventory replenishment intervals, and monitor live revenue, expenses, and net profit charts.
+              </p>
+            </div>
+
+            <div className="card card-hover p-6">
+              <div className="w-10 h-10 rounded-xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center mb-5">
+                <FiTruck className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-black dark:text-white">Supplier Directory & Routing</h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed">
+                Connect with simulated global suppliers, evaluate lead times and reliability scores, and route customer orders with real tracking numbers.
+              </p>
+            </div>
+
+            <div className="card card-hover p-6">
+              <div className="w-10 h-10 rounded-xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center mb-5">
+                <FiPercent className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-black dark:text-white">Unit Economics Modeling</h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed">
+                Calculate break-even ROAS, per-order COGS, payment gateway fees, and return allowances to protect your bottom line before spending ad dollars.
+              </p>
+            </div>
+
+            <div className="card card-hover p-6">
+              <div className="w-10 h-10 rounded-xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center mb-5">
+                <FiPackage className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-black dark:text-white">Catalog Sync & Markups</h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed">
+                Import winning products from suppliers directly into your store catalog. Adjust markups, variants, and stock thresholds seamlessly.
+              </p>
+            </div>
+
+            <div className="card card-hover p-6">
+              <div className="w-10 h-10 rounded-xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center mb-5">
+                <FiTarget className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-black dark:text-white">Market Intelligence</h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed">
+                Evaluate industry growth categories and test strategic decision scenarios when facing price wars, logistics delays, or holiday rushes.
+              </p>
+            </div>
+
+            <div className="card card-hover p-6">
+              <div className="w-10 h-10 rounded-xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center mb-5">
+                <FiShield className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-black dark:text-white">Risk-Free Environment</h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed">
+                Experiment with bold price increases or heavy marketing campaigns. Discover failure points safely before starting real-world stores.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <motion.h2 
-            className="text-4xl font-bold text-center mb-12 text-gray-800"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.5 }}
-          >
-            What Our Users Say
-          </motion.h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <TestimonialCard 
-              quote="SimBusiness gave me the confidence to start my own dropshipping business. I learned so much without risking my savings!" 
-              author="Alex Johnson"
-              role="New Entrepreneur"
-              delay={0}
-            />
-            <TestimonialCard 
-              quote="The simulation is incredibly realistic. It helped me identify and fix issues in my business model before launching." 
-              author="Sarah Williams"
-              role="E-commerce Store Owner"
-              delay={0.1}
-            />
-            <TestimonialCard 
-              quote="I use SimBusiness to test new product ideas and marketing strategies before implementing them in my actual store." 
-              author="Michael Chen"
-              role="Experienced Dropshipper"
-              delay={0.2}
-            />
+      {/* 5-Step Workflow */}
+      <section className="py-20 md:py-28 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="badge-mono badge-mono-outline">Execution Flow</span>
+            <h2 className="text-3xl font-bold text-black dark:text-white tracking-tight mt-3">
+              The Dropshipping Lifecycle
+            </h2>
+            <p className="text-zinc-600 dark:text-zinc-400 text-xs mt-2">
+              Step through the five core stages every successful e-commerce operator executes.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {[
+              {
+                step: '01',
+                title: 'Niche Research & Supplier Discovery',
+                desc: 'Audit trending product categories in Market Intel and inspect supplier lead times and reliability ratings.',
+              },
+              {
+                step: '02',
+                title: 'Product Import & Markup Strategy',
+                desc: 'Select products from the catalog, configure target profit margins, and calculate break-even acquisition costs.',
+              },
+              {
+                step: '03',
+                title: 'Operations & Traffic Simulation',
+                desc: 'Launch the daily simulation engine on the dashboard. Calibrate marketing ad budgets and watch incoming customer order velocity.',
+              },
+              {
+                step: '04',
+                title: 'Automated Supplier Routing & Tracking',
+                desc: 'Route incoming orders to wholesale partners, obtain simulated carrier tracking numbers, and manage customer fulfillment status.',
+              },
+              {
+                step: '05',
+                title: 'Data-Driven Optimization',
+                desc: 'Review net profit trends, return rates, and cart abandonment stats to refine margins for sustainable scaling.',
+              },
+            ].map((item) => (
+              <div
+                key={item.step}
+                className="card flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 gap-4"
+              >
+                <div className="flex items-start sm:items-center gap-4">
+                  <span className="font-mono text-base font-bold text-black dark:text-white w-8">
+                    {item.step}
+                  </span>
+                  <div>
+                    <h4 className="text-sm font-bold text-black dark:text-white">{item.title}</h4>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{item.desc}</p>
+                  </div>
+                </div>
+                <span className="text-xs font-mono text-zinc-400 flex items-center gap-1 self-end sm:self-center">
+                  <FiCheckCircle className="w-3.5 h-3.5" /> Ready
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Call to Action */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <motion.h2 
-            className="text-4xl font-bold mb-6"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.5 }}
-          >
-            Ready to Start Your Dropshipping Journey?
-          </motion.h2>
-          <motion.p 
-            className="text-xl mb-8 max-w-2xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            Jump into our simulation and learn without financial risk. Start building your dropshipping skills today.
-          </motion.p>
+      <section className="py-20 md:py-24 bg-black text-white dark:bg-zinc-900/60 text-center">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
+            Ready to test your business instincts?
+          </h2>
+          <p className="text-sm sm:text-base text-zinc-400 max-w-xl mx-auto mt-4 leading-relaxed">
+            Jump directly into the virtual dashboard. No credit card, no inventory commitments, and zero capital risk.
+          </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Link href="/auth/signup" 
-              className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg text-lg px-8 py-4 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl inline-block"
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">
+            <Link
+              href="/dashboard"
+              className="px-6 py-3 rounded-lg bg-white text-black font-semibold text-xs hover:bg-zinc-200 transition-colors shadow"
             >
-              Get Started Free
+              Start Operating Now
             </Link>
-            <Link href="/faq" 
-              className="ml-4 bg-transparent hover:bg-white/20 text-white border-2 border-white font-medium rounded-lg text-lg px-8 py-4 transition-all duration-300 hover:scale-105 inline-block"
+            <Link
+              href="/orders"
+              className="px-6 py-3 rounded-lg border border-zinc-700 text-white font-medium text-xs hover:bg-zinc-800 transition-colors"
             >
-              Learn More
+              Explore Order Fulfillment
             </Link>
-          </motion.div>
+          </div>
         </div>
       </section>
     </main>
   );
 }
-
-function FeatureCard({ title, description, icon, delay = 0 }: { title: string; description: string; icon: React.ReactNode; delay?: number }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
-  
-  return (
-    <motion.div 
-      ref={ref}
-      className="bg-white hover:shadow-xl transition-all duration-500 p-6 rounded-xl border border-gray-100"
-      initial={{ opacity: 0, y: 50 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-      transition={{ duration: 0.5, delay: delay }}
-    >
-      <div className="flex justify-center mb-4">
-        <div className="text-4xl p-4 bg-gray-50 rounded-full">{icon}</div>
-      </div>
-      <h3 className="text-xl font-semibold mb-3 text-gray-800">{title}</h3>
-      <p className="text-gray-600">{description}</p>
-    </motion.div>
-  );
-}
-
-function StepCard({ number, title, description }: { number: string; title: string; description: string }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
-  
-  return (
-    <motion.div 
-      ref={ref}
-      className="flex mb-8 items-start"
-      initial={{ opacity: 0, x: -50 }}
-      animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
-      transition={{ duration: 0.5, delay: Number(number) * 0.1 }}
-    >
-      <div className="flex-shrink-0 mr-4">
-        <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold">
-          {number}
-        </div>
-      </div>
-      <div>
-        <h3 className="text-xl font-semibold mb-2 text-gray-800">{title}</h3>
-        <p className="text-gray-600">{description}</p>
-      </div>
-    </motion.div>
-  );
-}
-
-function TestimonialCard({ quote, author, role, delay = 0 }: { quote: string; author: string; role: string; delay?: number }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
-  
-  return (
-    <motion.div 
-      ref={ref}
-      className="bg-white p-6 rounded-xl shadow-md border border-gray-100"
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-      transition={{ duration: 0.5, delay }}
-    >
-      <div className="mb-4 text-blue-500">
-        <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 32 32">
-          <path d="M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z" />
-        </svg>
-      </div>
-      <p className="text-gray-700 mb-4">{quote}</p>
-      <div className="font-semibold text-gray-900">{author}</div>
-      <div className="text-sm text-gray-500">{role}</div>
-    </motion.div>
-  );
-} 
