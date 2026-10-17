@@ -9,7 +9,7 @@ export async function GET() {
 
   if (apiKey) {
     try {
-      const res = await fetch('https://api.printful.com/store/products', {
+      const res = await fetch('https://api.printful.com/products', {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
@@ -21,7 +21,8 @@ export async function GET() {
         const data = await res.json();
         return NextResponse.json({
           status: 'connected',
-          provider: 'Printful Global POD',
+          provider: 'Printful Global POD Catalog',
+          totalCatalogItems: Array.isArray(data.result) ? data.result.length : 0,
           result: data.result || [],
         });
       }

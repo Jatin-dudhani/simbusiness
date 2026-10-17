@@ -67,9 +67,20 @@ async function callGeminiApi(prompt: string, systemInstruction?: string): Promis
       if (data && typeof data.text === 'string' && data.text.length > 0) {
         return data.text;
       }
+    } else {
+      const errData = await serverRes.json().catch(() => ({}));
+      const errMsg = errData.error || `AI server returned status ${serverRes.status}`;
+      // If no local client key is configured, propagate the server's descriptive error
+      const localKey = getGeminiApiKey();
+      if (!localKey) {
+        throw new Error(errMsg);
+      }
     }
-  } catch (_serverErr) {
-    // If running in a static or non-API environment, proceed to client fallback below
+  } catch (serverErr: any) {
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) {
+      throw serverErr || new Error('Gemini AI is not available. Please verify the Gemini API key in Settings or Vercel environment variables.');
+    }
   }
 
   // 2. Client fallback: Use runtime key (if entered in UI) or environment key
@@ -79,15 +90,15 @@ async function callGeminiApi(prompt: string, systemInstruction?: string): Promis
     throw new Error('Gemini AI is not available. Please verify the Gemini API key in Settings or Vercel environment variables.');
   }
 
-  // Model cascade: gemini-2.0-flash, gemini-1.5-flash, gemini-3.8-flash, etc.
+  // Model cascade: gemini-flash-latest, gemini-2.5-flash, etc.
   const candidateModels = [
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-8b',
-    'gemini-1.5-pro',
     'gemini-flash-latest',
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-3.5-flash',
     'gemini-3.8-flash',
-    'gemini-3.5-flash'
+    'gemini-2.0-flash',
+    'gemini-1.5-flash'
   ];
 
   let lastError: Error | null = null;

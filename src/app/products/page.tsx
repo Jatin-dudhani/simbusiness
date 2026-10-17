@@ -11,9 +11,14 @@ import {
   FiSearch,
   FiTrendingUp,
   FiLayers,
-  FiExternalLink
+  FiExternalLink,
+  FiCpu,
+  FiCopy,
+  FiX,
+  FiRefreshCw
 } from 'react-icons/fi';
 import { fetchProducts, fetchCategories, fetchProductsByCategory } from '@/services/api';
+import { generateProductCopy } from '@/services/ai';
 import { Product } from '@/types';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -28,6 +33,42 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
+
+  // AI Ad Copy & Hooks State (Powered by Gemini)
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [selectedAiProduct, setSelectedAiProduct] = useState<Product | null>(null);
+  const [aiCopy, setAiCopy] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const handleGenerateAiCopy = async (product: Product) => {
+    setSelectedAiProduct(product);
+    setAiModalOpen(true);
+    setAiLoading(true);
+    setAiCopy(null);
+    setCopySuccess(false);
+
+    try {
+      const generated = await generateProductCopy({
+        productName: product.name,
+        category: product.category,
+        cost: product.cost,
+        potentialPrice: product.potentialPrice,
+      });
+      setAiCopy(generated);
+    } catch (err: any) {
+      setAiCopy(`Error generating ad copy: ${err.message || 'Please check Gemini API configuration'}`);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleCopyToClipboard = () => {
+    if (!aiCopy) return;
+    navigator.clipboard.writeText(aiCopy);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2500);
+  };
 
   // Load imported products from localStorage
   useEffect(() => {
@@ -273,27 +314,105 @@ export default function ProductsPage() {
                       </div>
                     </div>
 
-                    {/* Action button */}
-                    <button
-                      onClick={() => handleToggleStoreImport(product)}
-                      className={`btn w-full text-xs py-2 mt-2 ${
-                        isImported
-                          ? 'btn-outline border-black dark:border-white font-semibold'
-                          : 'btn-primary'
-                      }`}
-                    >
-                      {isImported ? (
-                        <>
-                          <FiCheck className="w-3.5 h-3.5 mr-1.5" /> In Your Store
-                        </>
-                      ) : (
-                        '+ Import to Store'
-                      )}
-                    </button>
+                    {/* Action buttons */}
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <button
+                        onClick={() => handleGenerateAiCopy(product)}
+                        className="btn btn-outline text-xs py-2 flex items-center justify-center gap-1 hover:border-black dark:hover:border-white transition-colors"
+                        title="Generate Viral TikTok Hooks & DTC Copy using Gemini AI"
+                      >
+                        <FiCpu className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-300" />
+                        <span>AI Hooks</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleToggleStoreImport(product)}
+                        className={`btn text-xs py-2 ${
+                          isImported
+                            ? 'btn-outline border-black dark:border-white font-semibold'
+                            : 'btn-primary'
+                        }`}
+                      >
+                        {isImported ? (
+                          <>
+                            <FiCheck className="w-3.5 h-3.5 mr-1" /> Added
+                          </>
+                        ) : (
+                          '+ Import'
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Gemini AI Viral Ad Copy & Hooks Modal */}
+        {aiModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative">
+              <button
+                onClick={() => setAiModalOpen(false)}
+                className="absolute top-4 right-4 text-zinc-400 hover:text-black dark:hover:text-white"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-2 mb-2">
+                <span className="badge-mono badge-mono-black">Google Gemini AI</span>
+                <span className="text-xs text-zinc-500 font-mono">DTC Viral Copy Engine</span>
+              </div>
+
+              <h3 className="text-base font-bold text-black dark:text-white line-clamp-1 mb-1">
+                {selectedAiProduct?.name}
+              </h3>
+              <p className="text-xs text-zinc-500 mb-4 font-mono">
+                Category: {selectedAiProduct?.category} • Margin: {selectedAiProduct ? (((selectedAiProduct.potentialPrice - selectedAiProduct.cost) / selectedAiProduct.potentialPrice) * 100).toFixed(0) : '0'}%
+              </p>
+
+              {aiLoading ? (
+                <div className="py-12 flex flex-col items-center justify-center space-y-3">
+                  <FiRefreshCw className="w-6 h-6 animate-spin text-black dark:text-white" />
+                  <p className="text-xs text-zinc-500 font-mono">Formulating viral TikTok hooks and DTC angles via Gemini...</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-xl bg-zinc-50 dark:bg-obsidian border border-zinc-100 dark:border-zinc-800 text-xs text-zinc-700 dark:text-zinc-200 whitespace-pre-line leading-relaxed max-h-80 overflow-y-auto font-mono">
+                    {aiCopy}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                    <button
+                      onClick={() => selectedAiProduct && handleGenerateAiCopy(selectedAiProduct)}
+                      disabled={aiLoading}
+                      className="text-xs text-zinc-500 hover:text-black dark:hover:text-white flex items-center gap-1 font-mono"
+                    >
+                      <FiRefreshCw className={`w-3.5 h-3.5 ${aiLoading ? 'animate-spin' : ''}`} />
+                      Regenerate
+                    </button>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleCopyToClipboard}
+                        disabled={!aiCopy || aiLoading}
+                        className="btn btn-outline text-xs flex items-center gap-1.5"
+                      >
+                        <FiCopy className="w-3.5 h-3.5" />
+                        {copySuccess ? 'Copied!' : 'Copy Hooks'}
+                      </button>
+                      <button
+                        onClick={() => setAiModalOpen(false)}
+                        className="btn btn-primary text-xs"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
           body: new URLSearchParams({
             amount: Math.round(amount * 100).toString(),
             currency: currency.toLowerCase(),
-            'payment_method_types[]': 'card',
+            'automatic_payment_methods[enabled]': 'true',
             description: 'SimBusiness Test Order',
           }),
         });

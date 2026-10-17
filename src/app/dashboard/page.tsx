@@ -191,19 +191,17 @@ export default function Dashboard() {
       });
       setAiAdvice(advice);
     } catch (e: any) {
-      setAiAdvice(`Error querying Gemini: ${e.message}`);
+      const msg = e.message || 'Unknown error';
+      setAiAdvice(`Error querying Gemini AI: ${msg}`);
+      if (msg.includes('not configured') || msg.includes('API key')) {
+        setShowKeyPrompt(true);
+      }
     } finally {
       setAiLoading(false);
     }
   };
 
-  const handleAskGemini = async () => {
-    const key = getGeminiApiKey();
-    if (!key) {
-      setShowKeyPrompt(true);
-      setAiModalOpen(true);
-      return;
-    }
+  const handleAskGemini = () => {
     fetchAiAdvice();
   };
 
@@ -1010,7 +1008,7 @@ export default function Dashboard() {
               </button>
 
               <div className="flex items-center gap-2 mb-4">
-                <span className="badge-mono badge-mono-black">Gemini 1.5 Flash</span>
+                <span className="badge-mono badge-mono-black">Google Gemini AI</span>
                 <span className="text-xs text-zinc-500 font-mono">Store Optimization Strategist</span>
               </div>
 
@@ -1018,25 +1016,31 @@ export default function Dashboard() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-lg font-bold text-black dark:text-white">
-                      Enter Google Gemini API Key
+                      Custom Google Gemini API Key
                     </h3>
                     <p className="text-xs text-zinc-500 mt-1">
-                      To run live AI intelligence, enter your Google Gemini API key below. You can get one for free at <span className="font-semibold text-black dark:text-white">aistudio.google.com</span>.
+                      SimBusiness runs on secure server-side AI by default. To override with your personal Google Gemini API key, enter it below (obtainable free at <span className="font-semibold text-black dark:text-white">aistudio.google.com</span>).
                     </p>
                   </div>
                   <input
                     type="password"
-                    placeholder="AIzaSy..."
+                    placeholder="AIzaSy... (Personal Gemini key)"
                     value={aiKeyInput}
                     onChange={(e) => setAiKeyInput(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-obsidian text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
                   />
                   <div className="flex justify-end gap-2 pt-2">
                     <button
-                      onClick={() => setAiModalOpen(false)}
+                      onClick={() => {
+                        if (aiAdvice) {
+                          setShowKeyPrompt(false);
+                        } else {
+                          setAiModalOpen(false);
+                        }
+                      }}
                       className="btn btn-outline text-xs"
                     >
-                      Cancel
+                      {aiAdvice ? 'Back to Advice' : 'Cancel'}
                     </button>
                     <button
                       onClick={handleSaveGeminiKeyAndProceed}
