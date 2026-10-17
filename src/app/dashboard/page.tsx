@@ -1,7 +1,24 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { BusinessStats } from '@/types';
+import { 
+  BusinessStats, 
+  CashLedgerEntry, 
+  PayoutBatch, 
+  MerchantAdvance, 
+  AdChannelState, 
+  ScenarioChallenge 
+} from '@/types';
+import { 
+  createDailyPayoutBatch, 
+  processDailySettlement, 
+  remitMerchantAdvance 
+} from '@/services/financialEngine';
+import { INITIAL_AD_CHANNELS, simulateMarketingDay } from '@/services/adEngine';
+import FinancialStatementsModal from '@/components/FinancialStatementsModal';
+import MarketingChannelsModal from '@/components/MarketingChannelsModal';
+import MonteCarloModal from '@/components/MonteCarloModal';
+import ScenarioChallengesModal from '@/components/ScenarioChallengesModal';
 import { 
   FiDollarSign, 
   FiShoppingCart, 
@@ -17,7 +34,9 @@ import {
   FiZap,
   FiTrendingDown,
   FiCpu,
-  FiX
+  FiX,
+  FiFileText,
+  FiAward
 } from 'react-icons/fi';
 import { getStoreAiAdvice, getGeminiApiKey, setRuntimeAiApiKey } from '@/services/ai';
 import { Line } from 'react-chartjs-2';
@@ -119,6 +138,34 @@ export default function Dashboard() {
     returnRate: 7.5 // percent
   });
 
+  // Option A Financial Engine State
+  const [liquidCash, setLiquidCash] = useState(250.0);
+  const [initialCash] = useState(250.0);
+  const [payoutBatches, setPayoutBatches] = useState<PayoutBatch[]>([]);
+  const [cashLedger, setCashLedger] = useState<CashLedgerEntry[]>([]);
+  const [merchantAdvance, setMerchantAdvance] = useState<MerchantAdvance>({
+    active: false,
+    borrowedAmount: 0,
+    flatFee: 0,
+    totalRepayable: 0,
+    remainingBalance: 0,
+    remittancePercent: 10,
+  });
+  const [financialModalOpen, setFinancialModalOpen] = useState(false);
+  const [cashWarning, setCashWarning] = useState<string | null>(null);
+
+  // Option B: Multi-Channel Marketing Engine State
+  const [adChannels, setAdChannels] = useState<AdChannelState[]>(INITIAL_AD_CHANNELS);
+  const [marketingModalOpen, setMarketingModalOpen] = useState(false);
+
+  // Option C: Monte Carlo Forecasting State
+  const [monteCarloModalOpen, setMonteCarloModalOpen] = useState(false);
+
+  // Option D: Scenario Challenges State
+  const [scenarioModalOpen, setScenarioModalOpen] = useState(false);
+  const [activeChallenge, setActiveChallenge] = useState<ScenarioChallenge | null>(null);
+  const [challengeStatusMsg, setChallengeStatusMsg] = useState<string | null>(null);
+
   // Gemini AI Advisor State
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -179,11 +226,12 @@ export default function Dashboard() {
       if (interval) clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoSimulate, businessStats.inventory, simulationSpeed, day, businessStats]);
+  }, [autoSimulate, businessStats.inventory, simulationSpeed, day, businessStats, liquidCash, payoutBatches, merchantAdvance, adChannels, activeChallenge]);
 
   // Execute one day of business operations
   const simulateDay = () => {
-    setDay(prev => prev + 1);
+    const nextDay = day + 1;
+    setDay(nextDay);
 
     // 12% probability of market event triggering
     if (Math.random() < 0.12) {
@@ -205,8 +253,16 @@ export default function Dashboard() {
       eventExpenseMultiplier = 1 + (currentEvent.impact.expenses / 100);
     }
 
-    // Orders generated
-    const potentialOrders = Math.max(1, Math.round(baseDailyVisitors * effectiveConversion));
+    // Option B: Multi-Channel Marketing Engine
+    // Runs Meta, TikTok, Google ads with saturation factor and creative fatigue
+    const channelResult = simulateMarketingDay(adChannels, metrics.averageOrderValue);
+    setAdChannels(channelResult.updatedChannels);
+    const dailyAdSpend = channelResult.totalAdSpend;
+    const adAttributedOrders = channelResult.totalAttributedOrders;
+
+    // Combined order generation (Organic + Paid Ads)
+    const organicOrders = Math.max(0, Math.round(baseDailyVisitors * effectiveConversion));
+    const potentialOrders = Math.max(1, organicOrders + adAttributedOrders);
     const availableInventory = businessStats.inventory;
     const actualOrders = Math.min(potentialOrders, availableInventory);
 
@@ -219,11 +275,69 @@ export default function Dashboard() {
     const cogsPerOrder = orderAov * 0.45;
     const shippingPerOrder = 5.0;
     const returnCost = dailyRevenue * (metrics.returnRate / 100) * 0.4;
-    const dailyAdSpend = businessStats.marketing > 0 ? Math.min(businessStats.marketing, 15) : 0;
 
     const rawExpenses = (actualOrders * (cogsPerOrder + shippingPerOrder)) + dailyAdSpend + returnCost;
     const dailyExpenses = rawExpenses * eventExpenseMultiplier;
     const dailyProfit = dailyRevenue - dailyExpenses;
+
+    // Option A: Payment Processor Clearing (T+2 Settlement) & 10% Rolling Reserve
+    const { updatedBatches, settledAmountToday, releasedReservesToday } = processDailySettlement(nextDay, payoutBatches);
+
+    let newBatch: PayoutBatch | null = null;
+    let dailyProcessingFees = 0;
+    if (actualOrders > 0 && dailyRevenue > 0) {
+      newBatch = createDailyPayoutBatch(nextDay, dailyRevenue, actualOrders);
+      dailyProcessingFees = newBatch.processingFee;
+    }
+    const allBatches = newBatch ? [...updatedBatches, newBatch] : updatedBatches;
+    setPayoutBatches(allBatches);
+
+    // Automatic remittance on active Merchant Cash Advance
+    let advanceRemittance = 0;
+    if (settledAmountToday > 0 && merchantAdvance.active) {
+      const remitResult = remitMerchantAdvance(settledAmountToday, merchantAdvance);
+      advanceRemittance = remitResult.remittanceAmount;
+      setMerchantAdvance(remitResult.updatedAdvance);
+    }
+
+    // Real Cash Movement:
+    // Inflow: Settled payouts released by processor + matured rolling reserves
+    // Outflow: Today's marketing burn + outbound shipping fees + advance remittance
+    const totalCashInflow = settledAmountToday + releasedReservesToday;
+    const directCashOutflow = dailyAdSpend + (actualOrders * shippingPerOrder) + advanceRemittance;
+    const netCashDelta = totalCashInflow - directCashOutflow;
+
+    const newCash = parseFloat((liquidCash + netCashDelta).toFixed(2));
+    setLiquidCash(newCash);
+
+    const inTransit = allBatches.filter(b => b.status === 'clearing').reduce((acc, b) => acc + b.netPayout, 0);
+    const reservesHeld = allBatches.reduce((acc, b) => acc + b.rollingReserve, 0);
+
+    // Record complete accounting & cash ledger row
+    const ledgerRow: CashLedgerEntry = {
+      day: nextDay,
+      grossRevenue: parseFloat(dailyRevenue.toFixed(2)),
+      processingFees: parseFloat(dailyProcessingFees.toFixed(2)),
+      cogs: parseFloat((actualOrders * cogsPerOrder).toFixed(2)),
+      shippingFees: parseFloat((actualOrders * shippingPerOrder).toFixed(2)),
+      adSpend: parseFloat(dailyAdSpend.toFixed(2)),
+      refunds: parseFloat(returnCost.toFixed(2)),
+      netAccountingProfit: parseFloat(dailyProfit.toFixed(2)),
+      cashInflow: parseFloat(totalCashInflow.toFixed(2)),
+      cashOutflow: parseFloat(directCashOutflow.toFixed(2)),
+      cashBalance: newCash,
+      inTransitPayouts: parseFloat(inTransit.toFixed(2)),
+      rollingReserve: parseFloat(reservesHeld.toFixed(2)),
+      inventoryValuation: parseFloat((Math.max(0, businessStats.inventory - actualOrders) * 16.0).toFixed(2)),
+      orders: actualOrders,
+    };
+    setCashLedger(prev => [...prev, ledgerRow]);
+
+    if (newCash < 50) {
+      setCashWarning(`Low Cash Warning: Spendable bank cash is $${newCash.toFixed(2)}. In-transit processor payouts ($${inTransit.toFixed(2)}) settle in T+2.`);
+    } else {
+      setCashWarning(null);
+    }
 
     // Update real metrics
     setMetrics(prev => ({
@@ -246,24 +360,100 @@ export default function Dashboard() {
       profit: [...prev.profit, parseFloat((businessStats.profit + dailyProfit).toFixed(2))],
       revenue: [...prev.revenue, parseFloat((businessStats.revenue + dailyRevenue).toFixed(2))],
     }));
+
+    // Option D: Evaluate Active Scenario Challenge Directives
+    if (activeChallenge) {
+      const updatedProfit = businessStats.profit + dailyProfit;
+      const updatedOrders = businessStats.orders + actualOrders;
+
+      if (activeChallenge.targetMetric === 'Net Business Profit' && updatedProfit >= activeChallenge.targetValue) {
+        setChallengeStatusMsg(`🎉 Mission Accomplished! You conquered "${activeChallenge.title}" with $${updatedProfit.toFixed(2)} Net Profit on Day ${nextDay}!`);
+        setAutoSimulate(false);
+      } else if (activeChallenge.targetMetric === 'Total Orders Completed' && updatedOrders >= activeChallenge.targetValue) {
+        setChallengeStatusMsg(`🎉 Mission Accomplished! You fulfilled ${updatedOrders} orders in "${activeChallenge.title}" on Day ${nextDay}!`);
+        setAutoSimulate(false);
+      } else if (nextDay >= activeChallenge.maxDays) {
+        setChallengeStatusMsg(`⚠️ Mission Expired: Day ${activeChallenge.maxDays} reached before completing the target.`);
+        setAutoSimulate(false);
+      } else if (newCash <= 0 && inTransit <= 0) {
+        setChallengeStatusMsg(`❌ Store Insolvent: Liquid cash hit $0 with no in-transit payouts. Challenge failed.`);
+        setAutoSimulate(false);
+      }
+    }
   };
 
   const restockInventory = (qty = 25) => {
     const costPerItem = 16.0;
     const totalRestockCost = qty * costPerItem;
+    if (liquidCash < totalRestockCost) {
+      setCashWarning(`Restock Blocked: Insufficient bank funds ($${liquidCash.toFixed(2)} available, $${totalRestockCost.toFixed(2)} needed). Payouts settle in T+2, or draw a $500 Working Capital Advance.`);
+      setFinancialModalOpen(true);
+      return;
+    }
+    setLiquidCash(prev => parseFloat((prev - totalRestockCost).toFixed(2)));
     setBusinessStats(prev => ({
       ...prev,
       inventory: prev.inventory + qty,
-      expenses: prev.expenses + totalRestockCost,
-      profit: prev.profit - totalRestockCost,
+      expenses: parseFloat((prev.expenses + totalRestockCost).toFixed(2)),
+      profit: parseFloat((prev.profit - totalRestockCost).toFixed(2)),
     }));
   };
 
   const increaseMarketingBudget = (amount = 100) => {
+    if (liquidCash < amount) {
+      setCashWarning(`Cannot fund ads: Insufficient cash ($${liquidCash.toFixed(2)} available, $${amount.toFixed(2)} needed). In-transit payouts settle in T+2.`);
+      return;
+    }
+    setLiquidCash(prev => parseFloat((prev - amount).toFixed(2)));
     setBusinessStats(prev => ({
       ...prev,
       marketing: prev.marketing + amount,
     }));
+  };
+
+  const handleRequestAdvance = (amount = 500) => {
+    const flatFee = amount * 0.08;
+    const totalRepayable = amount + flatFee;
+    setMerchantAdvance({
+      active: true,
+      borrowedAmount: amount,
+      flatFee,
+      totalRepayable,
+      remainingBalance: totalRepayable,
+      remittancePercent: 10,
+    });
+    setLiquidCash(prev => parseFloat((prev + amount).toFixed(2)));
+    setCashWarning(null);
+  };
+
+  const handleSelectChallenge = (challenge: ScenarioChallenge) => {
+    setActiveChallenge(challenge);
+    setChallengeStatusMsg(null);
+    setDay(0);
+    setLiquidCash(challenge.initialCash);
+    setBusinessStats({
+      revenue: 0,
+      expenses: 0,
+      profit: 0,
+      orders: 0,
+      inventory: challenge.initialInventory,
+      marketing: 100,
+    });
+    setSimulationHistory({ profit: [0], revenue: [0] });
+    setPayoutBatches([]);
+    setCashLedger([]);
+    setAdChannels(INITIAL_AD_CHANNELS);
+    setMerchantAdvance({
+      active: false,
+      borrowedAmount: 0,
+      flatFee: 0,
+      totalRepayable: 0,
+      remainingBalance: 0,
+      remittancePercent: 10,
+    });
+    setCashWarning(null);
+    setCurrentEvent(null);
+    setAutoSimulate(false);
   };
 
   // Preset scenarios to test business limits
@@ -302,6 +492,21 @@ export default function Dashboard() {
       setDay(0);
       setCurrentEvent(null);
       setAutoSimulate(false);
+      setLiquidCash(250.0);
+      setPayoutBatches([]);
+      setCashLedger([]);
+      setAdChannels(INITIAL_AD_CHANNELS);
+      setActiveChallenge(null);
+      setChallengeStatusMsg(null);
+      setMerchantAdvance({
+        active: false,
+        borrowedAmount: 0,
+        flatFee: 0,
+        totalRepayable: 0,
+        remainingBalance: 0,
+        remittancePercent: 10,
+      });
+      setCashWarning(null);
     }
   };
 
@@ -428,6 +633,46 @@ export default function Dashboard() {
               )}
             </button>
 
+            {/* Financial Statements (P&L & Cash Flow) */}
+            <button
+              onClick={() => setFinancialModalOpen(true)}
+              className="btn btn-outline text-xs flex items-center gap-1.5 border-zinc-300 dark:border-zinc-700 hover:border-black dark:hover:border-white"
+              title="Inspect 3-Statement P&L, Cash Flow, Balance Sheet, and Payout Clearing Ledger"
+            >
+              <FiFileText className="w-3.5 h-3.5" />
+              <span>Financials</span>
+            </button>
+
+            {/* Option B: Multi-Channel Ad Engine */}
+            <button
+              onClick={() => setMarketingModalOpen(true)}
+              className="btn btn-outline text-xs flex items-center gap-1.5 border-zinc-300 dark:border-zinc-700 hover:border-black dark:hover:border-white"
+              title="Configure Meta, TikTok, and Google ad spend allocation & creative fatigue"
+            >
+              <FiTarget className="w-3.5 h-3.5" />
+              <span>Ad Engine</span>
+            </button>
+
+            {/* Option C: Founder Monte Carlo Simulator */}
+            <button
+              onClick={() => setMonteCarloModalOpen(true)}
+              className="btn btn-outline text-xs flex items-center gap-1.5 border-zinc-300 dark:border-zinc-700 hover:border-black dark:hover:border-white"
+              title="Run 500 stochastic trials using real unit economics"
+            >
+              <FiTrendingUp className="w-3.5 h-3.5" />
+              <span>Monte Carlo</span>
+            </button>
+
+            {/* Option D: Career Scenarios & Challenges */}
+            <button
+              onClick={() => setScenarioModalOpen(true)}
+              className="btn btn-outline text-xs flex items-center gap-1.5 border-zinc-300 dark:border-zinc-700 hover:border-black dark:hover:border-white"
+              title="Tackle structured founder challenges with victory/loss rules"
+            >
+              <FiAward className="w-3.5 h-3.5" />
+              <span>Challenges</span>
+            </button>
+
             {/* Gemini AI Advisor */}
             <button
               onClick={handleAskGemini}
@@ -439,6 +684,79 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
+
+        {/* Challenge Directives Completed / Expired Status */}
+        {challengeStatusMsg && (
+          <div className="mb-6 p-4 rounded-xl border border-zinc-900 bg-zinc-900 text-white flex items-center justify-between gap-3 animate-fadeIn">
+            <div className="flex items-center gap-3">
+              <FiAward className="w-5 h-5 text-amber-400 shrink-0" />
+              <div className="text-xs font-medium">{challengeStatusMsg}</div>
+            </div>
+            <button
+              onClick={() => setChallengeStatusMsg(null)}
+              className="px-2.5 py-1 text-[11px] bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-300 transition"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* Active Mission Banner (Option D) */}
+        {activeChallenge && (
+          <div className="mb-6 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-[#161618] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="p-2 bg-black text-white dark:bg-white dark:text-black rounded-lg">
+                <FiAward className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-xs text-zinc-900 dark:text-white">{activeChallenge.title}</span>
+                  <span className="px-1.5 py-0.5 text-[10px] font-mono bg-zinc-200 dark:bg-zinc-800 rounded">
+                    Day {day} / {activeChallenge.maxDays}
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-500 mt-0.5">
+                  Target: {activeChallenge.targetMetric} ≥ {activeChallenge.targetValue} (Current Profit: ${businessStats.profit.toFixed(2)}, Orders: {businessStats.orders})
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setScenarioModalOpen(true)}
+              className="text-xs text-zinc-600 dark:text-zinc-300 hover:underline text-left sm:text-right"
+            >
+              Switch Mission →
+            </button>
+          </div>
+        )}
+
+        {/* Working Capital & Cash Warning Banner */}
+        {cashWarning && (
+          <div className="mb-6 p-4 rounded-xl border border-rose-500 bg-rose-50 dark:bg-rose-950/20 text-rose-950 dark:text-rose-200 flex items-start justify-between gap-3 animate-fadeIn">
+            <div className="flex items-start gap-3">
+              <FiAlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              <div className="text-xs">
+                <strong className="font-semibold block mb-0.5">Cash Flow Friction Warning</strong>
+                <span>{cashWarning}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setFinancialModalOpen(true)}
+                className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded-lg transition"
+              >
+                Open Ledger
+              </button>
+              {!merchantAdvance.active && (
+                <button
+                  onClick={() => handleRequestAdvance(500)}
+                  className="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium rounded-lg transition"
+                >
+                  Draw $500 Advance
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Market Event Banner */}
         {currentEvent && (
@@ -494,16 +812,27 @@ export default function Dashboard() {
               <FiDollarSign className="w-4 h-4 text-zinc-400" />
             </div>
             <p className="text-2xl font-bold text-black dark:text-white mt-2">${businessStats.revenue.toFixed(2)}</p>
-            <span className="text-[11px] text-zinc-500 font-mono">From customer orders</span>
+            <span className="text-[11px] text-zinc-500 font-mono">Cumulative customer sales</span>
           </div>
 
           <div className="card">
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase font-medium tracking-wider text-zinc-500">Total Operating Expenses</span>
-              <FiTrendingDown className="w-4 h-4 text-zinc-400" />
+              <span className="text-xs uppercase font-medium tracking-wider text-zinc-500">Spendable Cash in Bank</span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${liquidCash > 50 ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300' : 'bg-rose-100 text-rose-700'}`}>
+                {payoutBatches.filter(b => b.status === 'clearing').reduce((acc, b) => acc + b.netPayout, 0) > 0 
+                  ? `+$${payoutBatches.filter(b => b.status === 'clearing').reduce((acc, b) => acc + b.netPayout, 0).toFixed(0)} clearing` 
+                  : 'T+2 settlement'}
+              </span>
             </div>
-            <p className="text-2xl font-bold text-black dark:text-white mt-2">${businessStats.expenses.toFixed(2)}</p>
-            <span className="text-[11px] text-zinc-500 font-mono">COGS, shipping & ad spend</span>
+            <p className={`text-2xl font-bold mt-2 ${liquidCash >= 0 ? 'text-black dark:text-white' : 'text-rose-600'}`}>
+              ${liquidCash.toFixed(2)}
+            </p>
+            <button 
+              onClick={() => setFinancialModalOpen(true)}
+              className="text-[11px] text-zinc-500 hover:text-black dark:hover:text-white underline mt-0.5 block text-left"
+            >
+              View 3-statement P&L & Cash Flow →
+            </button>
           </div>
 
           <div className="card">
@@ -592,52 +921,52 @@ export default function Dashboard() {
           </div>
 
           <div className="card">
-            <h3 className="font-bold text-sm text-black dark:text-white flex items-center gap-2 mb-3">
-              <FiTarget className="w-4 h-4" /> Paid Ad Budget
-            </h3>
-            <p className="text-xs text-zinc-500 mb-1">
-              Ad Spend Balance: <strong className="font-mono text-black dark:text-white text-sm">${businessStats.marketing.toFixed(2)}</strong>
-            </p>
-            <p className="text-[11px] text-zinc-400 mb-4">Ad spend increases daily impressions and visitor conversion rate.</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => increaseMarketingBudget(100)}
-                className="btn btn-outline text-xs"
-              >
-                +$100 Ads
-              </button>
-              <button
-                onClick={() => increaseMarketingBudget(250)}
-                className="btn btn-outline text-xs"
-              >
-                +$250 Ads
-              </button>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-sm text-black dark:text-white flex items-center gap-2">
+                <FiTarget className="w-4 h-4" /> Multi-Channel Ads
+              </h3>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded">
+                ${adChannels.reduce((a, c) => a + c.dailyBudget, 0)}/day
+              </span>
             </div>
+            <p className="text-xs text-zinc-500 mb-2">
+              Meta: <strong className="text-zinc-900 dark:text-white font-mono">${adChannels.find(c => c.id === 'meta')?.dailyBudget || 0}</strong> • 
+              TikTok: <strong className="text-zinc-900 dark:text-white font-mono">${adChannels.find(c => c.id === 'tiktok')?.dailyBudget || 0}</strong> • 
+              Google: <strong className="text-zinc-900 dark:text-white font-mono">${adChannels.find(c => c.id === 'google')?.dailyBudget || 0}</strong>
+            </p>
+            <p className="text-[11px] text-zinc-400 mb-3">Manage diminishing ROAS and refresh fatigued ad creatives.</p>
+            <button
+              onClick={() => setMarketingModalOpen(true)}
+              className="btn btn-outline text-xs w-full flex items-center justify-center gap-1.5"
+            >
+              <FiTarget className="w-3.5 h-3.5" /> Configure Channels & Creatives
+            </button>
           </div>
 
           <div className="card">
-            <h3 className="font-bold text-sm text-black dark:text-white flex items-center gap-2 mb-3">
-              <FiZap className="w-4 h-4" /> Stress-Test Scenarios
-            </h3>
-            <p className="text-[11px] text-zinc-400 mb-3">Simulate extreme dropshipping business conditions with 1 click.</p>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-sm text-black dark:text-white flex items-center gap-2">
+                <FiZap className="w-4 h-4" /> Career Missions & Presets
+              </h3>
+              {activeChallenge && (
+                <span className="text-[10px] font-mono px-1.5 py-0.5 bg-black text-white dark:bg-white dark:text-black rounded">
+                  Mission Active
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-zinc-400 mb-3">Tackle realistic founder milestones or simulate extreme shocks.</p>
+            <button
+              onClick={() => setScenarioModalOpen(true)}
+              className="btn btn-primary text-xs w-full mb-2 flex items-center justify-center gap-1.5"
+            >
+              <FiAward className="w-3.5 h-3.5" /> Founder Challenges ({activeChallenge ? '1 Active' : 'Select'})
+            </button>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => applyPresetScenario('viral')}
                 className="btn btn-outline text-xs text-left"
               >
                 Viral Surge
-              </button>
-              <button
-                onClick={() => applyPresetScenario('blitz')}
-                className="btn btn-outline text-xs text-left"
-              >
-                Black Friday
-              </button>
-              <button
-                onClick={() => applyPresetScenario('delay')}
-                className="btn btn-outline text-xs text-left"
-              >
-                Port Strike
               </button>
               <button
                 onClick={() => applyPresetScenario('reset')}
@@ -765,6 +1094,42 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* Option A: Financial Statements (3-Statement P&L, Cash Flow, Balance Sheet & Ledger) */}
+        <FinancialStatementsModal
+          isOpen={financialModalOpen}
+          onClose={() => setFinancialModalOpen(false)}
+          ledger={cashLedger}
+          payoutBatches={payoutBatches}
+          liquidCash={liquidCash}
+          initialCash={initialCash}
+          merchantAdvance={merchantAdvance}
+          onRequestAdvance={handleRequestAdvance}
+          inventoryUnits={businessStats.inventory}
+        />
+
+        {/* Option B: Multi-Channel Marketing Engine Modal */}
+        <MarketingChannelsModal
+          isOpen={marketingModalOpen}
+          onClose={() => setMarketingModalOpen(false)}
+          channels={adChannels}
+          onUpdateChannels={setAdChannels}
+          liquidCash={liquidCash}
+        />
+
+        {/* Option C: Founder Monte Carlo Forecasting Modal */}
+        <MonteCarloModal
+          isOpen={monteCarloModalOpen}
+          onClose={() => setMonteCarloModalOpen(false)}
+        />
+
+        {/* Option D: Founder Career Scenarios & Challenges Modal */}
+        <ScenarioChallengesModal
+          isOpen={scenarioModalOpen}
+          onClose={() => setScenarioModalOpen(false)}
+          onSelectChallenge={handleSelectChallenge}
+          activeChallengeId={activeChallenge?.id || null}
+        />
       </main>
     </div>
   );

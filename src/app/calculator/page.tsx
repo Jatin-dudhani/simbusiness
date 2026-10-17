@@ -12,6 +12,7 @@ import {
   FiTarget,
   FiRefreshCw
 } from 'react-icons/fi';
+import MonteCarloModal from '@/components/MonteCarloModal';
 
 interface Preset {
   name: string;
@@ -63,6 +64,7 @@ export default function CalculatorPage() {
   const [paymentFeeFixed, setPaymentFeeFixed] = useState<number>(0.30);
   const [returnRate, setReturnRate] = useState<number>(8); // percent
   const [monthlyTargetOrders, setMonthlyTargetOrders] = useState<number>(300);
+  const [monteCarloOpen, setMonteCarloOpen] = useState<boolean>(false);
 
   // Calculations
   const grossRevenue = price + shippingCharged;
@@ -125,17 +127,27 @@ export default function CalculatorPage() {
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2">
-            <span className="badge-mono badge-mono-black">Strategic Finance</span>
-            <span className="text-xs text-zinc-500 font-mono">Unit Economics Engine</span>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="badge-mono badge-mono-black">Strategic Finance</span>
+              <span className="text-xs text-zinc-500 font-mono">Unit Economics Engine</span>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-black dark:text-white mt-1">
+              Dropshipping Profit & Break-Even Calculator
+            </h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+              Model accurate per-order unit economics including COGS, fulfillment, payment gateway processing, customer return rates, and ROAS.
+            </p>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-black dark:text-white mt-1">
-            Dropshipping Profit & Break-Even Calculator
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Model accurate per-order unit economics including COGS, fulfillment, payment gateway processing, customer return rates, and ROAS.
-          </p>
+          <button
+            onClick={() => setMonteCarloOpen(true)}
+            className="btn btn-primary text-xs flex items-center gap-2 self-start md:self-auto shrink-0"
+            title="Run 500 stochastic trials using these exact unit economics"
+          >
+            <FiTrendingUp className="w-3.5 h-3.5" />
+            <span>Monte Carlo Simulator</span>
+          </button>
         </div>
 
         {/* Preset Selector */}
@@ -400,6 +412,12 @@ export default function CalculatorPage() {
             </div>
           </div>
         </div>
+
+        {/* Founder Monte Carlo Simulator Modal */}
+        <MonteCarloModal
+          isOpen={monteCarloOpen}
+          onClose={() => setMonteCarloOpen(false)}
+        />
       </main>
     </div>
   );
