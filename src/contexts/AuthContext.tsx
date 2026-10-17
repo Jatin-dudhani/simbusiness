@@ -25,7 +25,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DEMO_USER: User = {
+export const DEMO_USER: User = {
   id: 'usr_admin_01',
   name: 'Jatin Dudhani',
   email: 'jatindudhani07@gmail.com',
@@ -39,10 +39,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize auth state from localStorage on client mount
+  // Initialize auth state from localStorage or sessionStorage on client mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('simbusiness_auth_user');
+      // Check session storage first, then local storage
+      const sessionStored = sessionStorage.getItem('simbusiness_auth_user');
+      const localStored = localStorage.getItem('simbusiness_auth_user');
+      const stored = sessionStored || localStored;
+
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed.email === 'alex.vance@simbusiness.app') {
@@ -52,13 +56,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(parsed);
         }
       } else {
-        // Automatically provide admin user for seamless simulation experience
-        setUser(DEMO_USER);
-        localStorage.setItem('simbusiness_auth_user', JSON.stringify(DEMO_USER));
+        // App starts unauthenticated so user always starts on the login page
+        setUser(null);
       }
     } catch (e) {
       console.warn('Failed to load auth state:', e);
-      setUser(DEMO_USER);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -66,8 +69,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string, rememberMe: boolean = true) => {
     setIsLoading(true);
-    // Simulate network authentication delay
-    await new Promise(resolve => setTimeout(resolve, 600));
+    // Realistic simulation authentication latency
+    await new Promise(resolve => setTimeout(resolve, 450));
 
     if (!email || !password) {
       setIsLoading(false);
@@ -79,50 +82,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, error: 'Password must be at least 4 characters.' };
     }
 
-    const authenticatedUser: User = {
-      id: `usr_${Date.now()}`,
-      name: email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      email,
-      role: 'store_owner',
-      businessName: `${email.split('@')[0]} Dropship Co.`,
-      avatarUrl: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80`,
-      createdAt: new Date().toISOString(),
-    };
+    const cleanEmail = email.trim().toLowerCase();
+    const isAdmin = cleanEmail === 'jatindudhani07@gmail.com';
+
+    const authenticatedUser: User = isAdmin
+      ? DEMO_USER
+      : {
+          id: `usr_${Date.now()}`,
+          name: cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          email: cleanEmail,
+          role: 'store_owner',
+          businessName: `${cleanEmail.split('@')[0]} Dropship Co.`,
+          avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+          createdAt: new Date().toISOString(),
+        };
 
     setUser(authenticatedUser);
-    if (rememberMe) {
-      localStorage.setItem('simbusiness_auth_user', JSON.stringify(authenticatedUser));
-    }
+
+    try {
+      if (rememberMe) {
+        localStorage.setItem('simbusiness_auth_user', JSON.stringify(authenticatedUser));
+        sessionStorage.removeItem('simbusiness_auth_user');
+      } else {
+        sessionStorage.setItem('simbusiness_auth_user', JSON.stringify(authenticatedUser));
+        localStorage.removeItem('simbusiness_auth_user');
+      }
+    } catch {}
+
     setIsLoading(false);
     return { success: true };
   };
 
   const signUp = async (name: string, email: string, password: string) => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 600));
+    await new Promise(resolve => setTimeout(resolve, 450));
 
     if (!name || !email || !password) {
       setIsLoading(false);
       return { success: false, error: 'All fields are required.' };
     }
 
-    if (password.length < 6) {
+    if (password.length < 4) {
       setIsLoading(false);
-      return { success: false, error: 'Password must be at least 6 characters.' };
+      return { success: false, error: 'Password must be at least 4 characters.' };
     }
 
+    const cleanEmail = email.trim().toLowerCase();
     const newUser: User = {
       id: `usr_${Date.now()}`,
       name: name.trim(),
-      email: email.trim().toLowerCase(),
+      email: cleanEmail,
       role: 'store_owner',
       businessName: `${name.trim()}'s Boutique`,
-      avatarUrl: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80`,
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
       createdAt: new Date().toISOString(),
     };
 
     setUser(newUser);
-    localStorage.setItem('simbusiness_auth_user', JSON.stringify(newUser));
+    try {
+      localStorage.setItem('simbusiness_auth_user', JSON.stringify(newUser));
+    } catch {}
+
     setIsLoading(false);
     return { success: true };
   };
@@ -131,6 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     try {
       localStorage.removeItem('simbusiness_auth_user');
+      sessionStorage.removeItem('simbusiness_auth_user');
     } catch {}
   };
 
@@ -139,7 +160,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = { ...user, ...updates };
     setUser(updated);
     try {
-      localStorage.setItem('simbusiness_auth_user', JSON.stringify(updated));
+      if (localStorage.getItem('simbusiness_auth_user')) {
+        localStorage.setItem('simbusiness_auth_user', JSON.stringify(updated));
+      }
+      if (sessionStorage.getItem('simbusiness_auth_user')) {
+        sessionStorage.setItem('simbusiness_auth_user', JSON.stringify(updated));
+      }
     } catch {}
   };
 

@@ -18,6 +18,7 @@ import { Product } from '@/types';
 import Image from 'next/image';
 import Link from 'next/link';
 import { apiConfig } from '@/config/site';
+import AuthGuard from '@/components/AuthGuard';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -114,7 +115,8 @@ export default function ProductsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <AuthGuard>
+      <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
@@ -296,5 +298,6 @@ export default function ProductsPage() {
         )}
       </main>
     </div>
+    </AuthGuard>
   );
 }

@@ -16,6 +16,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { siteConfig, businessDefaults, apiConfig } from '@/config/site';
 import { setRuntimeAiApiKey } from '@/services/ai';
+import AuthGuard from '@/components/AuthGuard';
 
 export default function SettingsPage() {
   const { user, updateProfile } = useAuth();
@@ -113,7 +114,8 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <AuthGuard>
+      <div className="min-h-screen bg-background">
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
@@ -438,5 +440,6 @@ export default function SettingsPage() {
         </form>
       </main>
     </div>
+    </AuthGuard>
   );
 }

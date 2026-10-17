@@ -13,6 +13,7 @@ import {
   FiRefreshCw
 } from 'react-icons/fi';
 import MonteCarloModal from '@/components/MonteCarloModal';
+import AuthGuard from '@/components/AuthGuard';
 
 interface Preset {
   name: string;
@@ -124,7 +125,8 @@ export default function CalculatorPage() {
   const verdict = getHealthVerdict();
 
   return (
-    <div className="min-h-screen bg-background">
+    <AuthGuard>
+      <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
@@ -420,5 +422,6 @@ export default function CalculatorPage() {
         />
       </main>
     </div>
+    </AuthGuard>
   );
 }

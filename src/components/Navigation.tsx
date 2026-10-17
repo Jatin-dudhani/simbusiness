@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   FiHome, 
   FiLayout, 
@@ -31,6 +31,7 @@ import { siteConfig } from '@/config/site';
 
 export default function Navigation() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isAuthenticated, signOut } = useAuth();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -83,13 +84,15 @@ export default function Navigation() {
   const isPlatformActive = ['/platform', '/dashboard', '/products', '/market', '/suppliers'].some(p => pathname.startsWith(p));
   const isToolsActive = ['/tools', '/orders', '/calculator', '/settings', '/faq', '/advance-tool', '/advanced-tools'].some(p => pathname.startsWith(p));
 
+  const homeHref = isAuthenticated ? '/dashboard' : '/login';
+
   return (
     <header className="sticky top-0 z-50 bg-white/90 dark:bg-obsidian/90 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2.5 group">
+            <Link href={homeHref} className="flex items-center gap-2.5 group">
               <div className="w-8 h-8 rounded-lg bg-black dark:bg-white flex items-center justify-center text-white dark:text-black font-black text-sm tracking-tighter group-hover:scale-105 transition-transform">
                 SB
               </div>
@@ -100,15 +103,39 @@ export default function Navigation() {
 
             {/* Desktop Navigation Links */}
             <nav className="hidden lg:flex items-center space-x-1">
+              {isAuthenticated ? (
+                <Link
+                  href="/dashboard"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    pathname === '/dashboard'
+                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-black'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                  }`}
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    pathname === '/login'
+                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-black'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                  }`}
+                >
+                  Sign In
+                </Link>
+              )}
+
               <Link
-                href="/"
+                href="/landing"
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  pathname === '/'
+                  pathname === '/landing'
                     ? 'bg-zinc-900 text-white dark:bg-white dark:text-black'
                     : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
                 }`}
               >
-                Home
+                Features
               </Link>
 
               {/* Platform Dropdown */}
@@ -378,6 +405,7 @@ export default function Navigation() {
                       onClick={() => {
                         signOut();
                         setUserMenuOpen(false);
+                        router.push('/login');
                       }}
                       className="w-full flex items-center gap-2 px-4 py-2 text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                     >
@@ -390,7 +418,7 @@ export default function Navigation() {
             ) : (
               <div className="flex items-center gap-2">
                 <Link
-                  href="/auth/signin"
+                  href="/login"
                   className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 >
                   Sign In

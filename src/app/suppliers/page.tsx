@@ -17,6 +17,7 @@ import {
 } from 'react-icons/fi';
 import { fetchSuppliers } from '@/services/api';
 import Link from 'next/link';
+import AuthGuard from '@/components/AuthGuard';
 
 const supplierRiskFactors = {
   high: [
@@ -167,7 +168,8 @@ export default function SuppliersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <AuthGuard>
+      <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
@@ -546,5 +548,6 @@ export default function SuppliersPage() {
         )}
       </main>
     </div>
+    </AuthGuard>
   );
 }

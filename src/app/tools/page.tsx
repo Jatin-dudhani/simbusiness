@@ -14,6 +14,7 @@ import {
   FiZap,
   FiTrendingUp
 } from 'react-icons/fi';
+import AuthGuard from '@/components/AuthGuard';
 
 export default function AdvancedToolsPage() {
   const tools = [
@@ -95,7 +96,8 @@ export default function AdvancedToolsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <AuthGuard>
+      <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header Section */}
         <div className="text-center max-w-3xl mx-auto mb-16">
@@ -201,5 +203,6 @@ export default function AdvancedToolsPage() {
         </div>
       </main>
     </div>
+    </AuthGuard>
   );
 }
