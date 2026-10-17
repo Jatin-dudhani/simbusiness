@@ -19,7 +19,7 @@ import {
   FiCpu,
   FiX
 } from 'react-icons/fi';
-import { getStoreAiAdvice, getGeminiApiKey } from '@/services/ai';
+import { getStoreAiAdvice, getGeminiApiKey, setRuntimeAiApiKey } from '@/services/ai';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -161,16 +161,10 @@ export default function Dashboard() {
 
   const handleSaveGeminiKeyAndProceed = () => {
     if (!aiKeyInput.trim()) return;
-    try {
-      const stored = localStorage.getItem('simbusiness_settings');
-      const parsed = stored ? JSON.parse(stored) : {};
-      parsed.aiApiKey = aiKeyInput.trim();
-      localStorage.setItem('simbusiness_settings', JSON.stringify(parsed));
-      setShowKeyPrompt(false);
-      fetchAiAdvice();
-    } catch (e) {
-      console.warn('Failed to save key:', e);
-    }
+    // Security: Keep in memory to eliminate clear-text storage risks (CodeQL Alert #1)
+    setRuntimeAiApiKey(aiKeyInput.trim());
+    setShowKeyPrompt(false);
+    fetchAiAdvice();
   };
 
   // Auto-simulation interval timer

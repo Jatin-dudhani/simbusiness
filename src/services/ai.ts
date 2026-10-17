@@ -22,27 +22,28 @@ export interface AIProductCopyRequest {
   potentialPrice: number;
 }
 
+let runtimeAiApiKey: string = '';
+
 /**
- * Get active Gemini API key from settings or environment
+ * Set Gemini API key in runtime memory (prevents clear-text localStorage storage)
+ */
+export function setRuntimeAiApiKey(key: string): void {
+  runtimeAiApiKey = key.trim();
+}
+
+/**
+ * Get active Gemini API key from runtime memory or environment variables
  */
 export function getGeminiApiKey(): string {
-  if (typeof window !== 'undefined') {
-    try {
-      const direct = localStorage.getItem('gemini_api_key');
-      if (direct && direct.trim().length > 0) return direct.trim();
-
-      const stored = localStorage.getItem('simbusiness_settings');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.aiApiKey && parsed.aiApiKey.trim().length > 0) {
-          return parsed.aiApiKey.trim();
-        }
-      }
-    } catch {}
+  if (runtimeAiApiKey && runtimeAiApiKey.length > 0) {
+    return runtimeAiApiKey;
   }
-  return process.env.NEXT_PUBLIC_AI_API_KEY || 
-         process.env.NEXT_PUBLIC_GEMINI_API_KEY || 
-         process.env.GEMINI_API_KEY || '';
+  return (
+    process.env.NEXT_PUBLIC_AI_API_KEY || 
+    process.env.NEXT_PUBLIC_GEMINI_API_KEY || 
+    process.env.GEMINI_API_KEY || 
+    ''
+  );
 }
 
 /**

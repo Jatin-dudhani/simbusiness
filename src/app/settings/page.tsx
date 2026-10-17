@@ -15,6 +15,7 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from '@/contexts/AuthContext';
 import { siteConfig, businessDefaults, apiConfig } from '@/config/site';
+import { setRuntimeAiApiKey } from '@/services/ai';
 
 export default function SettingsPage() {
   const { user, updateProfile } = useAuth();
@@ -83,7 +84,22 @@ export default function SettingsPage() {
     await new Promise(r => setTimeout(r, 500));
 
     try {
-      localStorage.setItem('simbusiness_settings', JSON.stringify(businessSettings));
+      // Security: Only persist non-sensitive operational preferences in localStorage.
+      // Sensitive 3rd-party API credentials are excluded to prevent clear-text storage (CWE-312 / CodeQL Alert #2).
+      const { 
+        stripeKey, 
+        exchangeRateKey, 
+        supplierApiKey, 
+        aiApiKey, 
+        ...safeOperationalPreferences 
+      } = businessSettings;
+
+      localStorage.setItem('simbusiness_settings', JSON.stringify(safeOperationalPreferences));
+
+      if (aiApiKey) {
+        setRuntimeAiApiKey(aiApiKey);
+      }
+
       if (user) {
         updateProfile({ businessName: businessSettings.businessName });
       }
