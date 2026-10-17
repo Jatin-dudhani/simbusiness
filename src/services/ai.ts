@@ -50,18 +50,44 @@ export function getGeminiApiKey(): string {
  * Call Gemini REST API with model fallback cascade
  */
 async function callGeminiApi(prompt: string, systemInstruction?: string): Promise<string> {
+  // 1. Primary path: Call the secure server-side route handler /api/ai
+  // Keeps the GEMINI_API_KEY protected on the server, hidden from GitHub and client bundles
+  try {
+    const serverRes = await fetch('/api/ai', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(runtimeAiApiKey ? { 'x-runtime-key': runtimeAiApiKey } : {})
+      },
+      body: JSON.stringify({ prompt, systemInstruction })
+    });
+
+    if (serverRes.ok) {
+      const data = await serverRes.json();
+      if (data && typeof data.text === 'string' && data.text.length > 0) {
+        return data.text;
+      }
+    }
+  } catch (_serverErr) {
+    // If running in a static or non-API environment, proceed to client fallback below
+  }
+
+  // 2. Client fallback: Use runtime key (if entered in UI) or environment key
   const apiKey = getGeminiApiKey();
 
   if (!apiKey) {
-    throw new Error('No Gemini API Key found. Please add your Gemini API key in Settings (/settings) or NEXT_PUBLIC_AI_API_KEY in .env.local.');
+    throw new Error('Gemini AI is not available. Please verify the Gemini API key in Settings or Vercel environment variables.');
   }
 
-  // Model cascade: gemini-3.8-flash is primary, fallback to 3.5, flash-latest, and 1.5
+  // Model cascade: gemini-2.0-flash, gemini-1.5-flash, gemini-3.8-flash, etc.
   const candidateModels = [
-    'gemini-3.8-flash',
-    'gemini-3.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-8b',
+    'gemini-1.5-pro',
     'gemini-flash-latest',
-    'gemini-1.5-flash'
+    'gemini-3.8-flash',
+    'gemini-3.5-flash'
   ];
 
   let lastError: Error | null = null;
